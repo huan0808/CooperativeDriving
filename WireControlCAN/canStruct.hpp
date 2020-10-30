@@ -10,9 +10,7 @@ public:
     int SR_Error;
     int SR_Waring;
     double SR_LiveCounter;
-    
 };
-
 
 class SteeringControl
 {
@@ -25,5 +23,4 @@ public:
     double SC_SetHandTorqueLimitValid;
     double SC_SetHandTorqueLimit;
     double SC_LiveCounter;
-
 };

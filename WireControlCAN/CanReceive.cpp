@@ -1,4 +1,4 @@
-
+// TODO: check if there is any unnecessary header
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,86 +20,63 @@
 //sudo ip link add dev vcan0 type vcan 
 //sudo ifconfig vcan0 up
 
+int main(int argc, char **argv) {
+	using namespace std;
 
-using namespace std;
+	cout << "CAN Sockets Receive Demo." << endl;
 
-int main(int argc, char **argv)
-{
-	int s, i; 
-	int nbytes;
-
-
-	struct sockaddr_can addr;
-	//network device
-	struct ifreq ifr;
-	struct can_frame frame;
-
-	printf("CAN Sockets Receive Demo\r\n");
-	   
 	// create a socket file describe symbol
-	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) 
-	{ 
+	int s = 0;
+	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) { 
 		perror("Socket");
 		return 1;
 	}
-	cout << "receiver's linux file descriptor is " << s << endl;
+	cout << "Receiver's linux file descriptor is " << s << endl;
 
-    //copy c string to ifr 
-	strcpy(ifr.ifr_name, "can0" );               
+    //copy c string to ifr
+    ifreq ifr;
+	strcpy(ifr.ifr_name, "can0");               
 	ioctl(s, SIOCGIFINDEX, &ifr); 
 
 	/*
 	    define a system call by user 
 	    input-output control
     */
-
+	sockaddr_can addr;
 	memset(&addr, 0, sizeof(addr));
-
 
 	addr.can_family = AF_CAN;
 	addr.can_ifindex = ifr.ifr_ifindex;
 
-
     //bind socketaddr and file describe symbol
-	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
-	{
+	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("Bind");
 		return 1;
 	}
 
-
-
 	//int frameNum = 1;
-
 	SteeringReport sr;
 	SteeringControl sc;
-
-
 	int frameNum = 0;
-	while(true)
-	{
-		// every time read a frame from CAN 
-
-		nbytes = read(s, &frame, sizeof(struct can_frame));
+	int nbytes = 0;
+	can_frame frame;
+	while (true) {
+		// every time read a frame from CAN
+		nbytes = read(s, &frame, sizeof(can_frame));
 		//frameNum++;
 
-
-		if (nbytes < 0)
-		{
-			break;
+		if (nbytes < 0) {
+		    break;
+			// TODO: should add some error message here.
 		}
-
 		// explain this CAN frame's data  
 		//frame.can_id >>= 3;
 
 		//cout <<"I receive a " << frameNum++ << "frame" << endl;
-		switch(frame.can_id)
-		{
+		switch(frame.can_id) {
+			case 0x50A: {
+				cout << "receive 0x50A " << endl;
 
-			case 0x50A:
-			{
-				cout<<"receive 0x50A "<<endl;
-		
 				//SR_CurrentSteeringAngle
 				/*
 				Signal Name	         Byte Order	Value Type	Start Bit	Length	Factor	Offset	Unit	Value Table	Comment
@@ -117,8 +94,8 @@ int main(int argc, char **argv)
 
 				*/
 
-				double CSA = (((((int)frame.data[2]) << 8 )+ frame.data[1]) & ((2 << 14) - 1)) * 0.1 - 600;				
-				cout<< hex << CSA<<endl;
+				double CSA = (((((int)frame.data[2]) << 8 ) + frame.data[1]) & ((2 << 14) - 1)) * 0.1 - 600;				
+				cout << hex << CSA <<endl;
 				/*
 					describe version 2
 					
@@ -128,18 +105,14 @@ int main(int argc, char **argv)
 					double CSA = -600 + 0.1 * (int)(csa.to_ulong());
 				*/
 
-				if(CSA < 0) 
-				{
+				if (CSA < 0) {
 					cout << "current steering Angle is left " << -1*CSA <<" deg" <<endl;
-				}
-				else
-				{
+				} else {
 					cout << "current steering Angle is right " << CSA << " deg" <<endl;
 				}
-				
 
 				sr.SR_CurrentSteeringAngle = CSA;
-				
+
 				//SR_CurrentSteeringSpeed
 				
 				//TODO
@@ -157,16 +130,13 @@ int main(int argc, char **argv)
 				//cout << "current HandTorqueSign is " << HT << endl;
 				//sr.SR_CurrentSteeringAngle = (uint8_t)frame.data[1]*
 
-
 				//SR_WorkMode
 				int WM = (int) ((frame.data[5] << 3) >> 5);
 				sr.SR_WorkMode = WM;
 
-
 				//SR_HandTorqueLimit
 				bitset<10> htl = (frame.data[5] << 6) >> 6 ;
 				htl = (htl << 6).to_ulong() + frame.data[6] ;
-
 
 				double HTL = (int)htl.to_ulong() * 0.01;
 				sr.SR_HandTorqueLimit = HTL;
@@ -183,26 +153,20 @@ int main(int argc, char **argv)
 				sr.SR_LiveCounter = lc;
 
 				//print a frame's data in hex
-				for (i = 0; i < frame.can_dlc; i++)
-				{
-					cout << std::hex << (int)frame.data[i]<<" "; 
+				for (int i = 0; i < frame.can_dlc; i++) {
+					cout << std::hex << (int)frame.data[i] << " "; 
 				}
-
 				break;
 			}
 
 		}
-
-
-		cout<<endl;
-
+		cout << endl;
 		//receive a frame in 20ms
 		usleep(200000);
 	}
 
 	//close socket file
-	if (close(s) < 0)
-	{
+	if (close(s) < 0) {
 		perror("Close");
 		return 1;
 	}

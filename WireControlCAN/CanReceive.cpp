@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
 	cout << "CAN Sockets Receive Demo." << endl;
 
-	// create a socket file describe symbol
+	// create a socket file descriptor
 	int s = 0;
 	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) { 
 		perror("Socket");
@@ -33,9 +33,11 @@ int main(int argc, char **argv) {
 	}
 	cout << "Receiver's linux file descriptor is " << s << endl;
 
-    //copy c string to ifr
+    //copy c string to ifr (network device)
+	// standard ioctls of network device 
     ifreq ifr;
-	strcpy(ifr.ifr_name, "can0");               
+	strcpy(ifr.ifr_name, "can0");  
+	//system call manipulates the underlying device parameters of special files             
 	ioctl(s, SIOCGIFINDEX, &ifr); 
 
 	/*
@@ -209,7 +211,7 @@ int main(int argc, char **argv) {
 		}
 		cout << endl;
 		//receive a frame in 20ms
-		usleep(200000);
+		usleep(20000);
 	}
 
 	//close socket file

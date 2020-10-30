@@ -43,21 +43,20 @@ int main(int argc, char **argv) {
 	    input-output control
     */
 	sockaddr_can addr;
+	
 	memset(&addr, 0, sizeof(addr));
 
 	addr.can_family = AF_CAN;
 	addr.can_ifindex = ifr.ifr_ifindex;
 
     //bind socketaddr and file describe symbol
-	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+	if (bind(s, (sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("Bind");
 		return 1;
 	}
 
-	//int frameNum = 1;
 	SteeringReport sr;
-	SteeringControl sc;
-	int frameNum = 0;
+	//int frameNum = 0;
 	int nbytes = 0;
 	can_frame frame;
 	while (true) {
@@ -66,8 +65,8 @@ int main(int argc, char **argv) {
 		//frameNum++;
 
 		if (nbytes < 0) {
-		    break;
-			// TODO: should add some error message here.
+		    perror("Read");
+			return 1;
 		}
 		// explain this CAN frame's data  
 		//frame.can_id >>= 3;
@@ -83,9 +82,7 @@ int main(int argc, char **argv) {
 
 				SR_CurrentSteeringAngle	Intel	Unsigned	8	          14      0.1 	-600	deg		方向盘当前转角，左负右正
 
-				/*
-				/*
-					describe version 1
+					decode version 1
 				    CAN use little endian , 
 					When we meet cross-byte signal we can left shift 8 bit of the second frame's bits  , then plus first frame's bits which we need .
 					after that we make a & calculation to save the low bits which we need.
@@ -94,10 +91,12 @@ int main(int argc, char **argv) {
 
 				*/
 
-				double CSA = (((((int)frame.data[2]) << 8 ) + frame.data[1]) & ((2 << 14) - 1)) * 0.1 - 600;				
+				double CSA = ((((int)frame.data[2] << 8 ) + frame.data[1]) & ((2 << 14) - 1)) * 0.1 - 600;				
 				cout << hex << CSA <<endl;
+
+
 				/*
-					describe version 2
+					decode version 2
 					
 					bitset<14> csa = ((frame.data[2] <<2 ) >> 2);
 					csa = (csa.to_ulong() << 8) + frame.data[1];
@@ -113,45 +112,93 @@ int main(int argc, char **argv) {
 
 				sr.SR_CurrentSteeringAngle = CSA;
 
+
+
 				//SR_CurrentSteeringSpeed
 				
-				//TODO
+				double CSS = ((frame.data[3] << 8) + (frame.data[2] >> 6)) & ((2 << 10) - 1);
+
 				
-				//cout << "current steering speed is " << CSS << endl;
+				cout << "current steering speed is " << CSS << " deg/s" << endl;
+				sr.SR_CurrentSteeringSpeed = CSS;
 
 				//SR_HandTorque
-				//TODO
-				//out << "current HandTorque is " << HT << endl;
+				double HT = (((frame.data[5] << 8) + frame.data[4]) & ((2 << 10) - 1)) * 0.01;
+				cout << "current HandTorque is " << HT << "NM" << endl;
+				sr.SR_HandTorque = HT;
 
 				// SR_HandTorqueSign
-				int HTS = (int) ((frame.data[5] << 2) >> 7);
+				int HTS = (int) ((frame.data[5] >> 2) & 1);
 				sr.SR_HandTorqueSign = HTS;
-
-				//cout << "current HandTorqueSign is " << HT << endl;
+				if(HTS == 0){
+					cout << "current HandTorqueSign is Left" << endl;
+				}
+				else{
+					cout << "current HandTorqueSign is Right" << endl;
+				}
 				//sr.SR_CurrentSteeringAngle = (uint8_t)frame.data[1]*
 
 				//SR_WorkMode
-				int WM = (int) ((frame.data[5] << 3) >> 5);
+				int WM = (int) ((frame.data[5] >> 3) & ((2 << 3) - 1));
 				sr.SR_WorkMode = WM;
+				if(WM == 0)
+				{
+					cout << "WorkMode is Manual" << endl; 
+				}
+				else if(WM == 1)
+				{
+					cout << "WorkMode is Angle" << endl; 
+				}
+				else if(WM == 2)
+				{
+					cout << "WorkMode is Torque" << endl; 
+				}
+				else if(WM == 7)
+				{
+					cout << "WorkMode Error" << endl; 
+				}
 
 				//SR_HandTorqueLimit
-				bitset<10> htl = (frame.data[5] << 6) >> 6 ;
-				htl = (htl << 6).to_ulong() + frame.data[6] ;
 
-				double HTL = (int)htl.to_ulong() * 0.01;
+				double HTL = (((frame.data[6] << 8) + (frame.data[5] >> 6)) & ((2 << 10) - 1)) * 0.01;
 				sr.SR_HandTorqueLimit = HTL;
-
+				cout << "current HandTorqueLimit is " << HTL << " NM" << endl;
 				//SR_Error
-				int err = frame.data[7] >> 6;
+				int err = frame.data[7] & 3;
 				sr.SR_Error = err;
+				if(err == 0)
+				{
+					cout << "error signal is NoError" << endl;
+				}
+				else if(err == 1)
+				{
+					cout << "error signal is OverCurrent " << endl;
+				}
+				else if(err ==2)
+				{
+					cout << "error signal is LoseSAS " << endl;
+				}
+
 				//waring
-				int waring = (frame.data[7] << 2 ) >> 6;
+				int waring = ((frame.data[7] >> 2 ) & 3);
 				sr.SR_Waring = waring; 
-
+				if(waring == 0)
+				{
+					cout << "waring signal is None waring" << endl;
+				}
+				else if(waring == 1)
+				{
+					cout << "waring signal is LeftLimit" <<endl;
+				}
+				else if(waring == 2)
+				{
+					cout << "waring signal is RightLimit" <<endl;
+				}
+				
 				//liveCounter
-				double lc = (frame.data[7] << 4) >> 4;
+				double lc = (frame.data[7] >> 4) & ((2 << 4) - 1) ;
 				sr.SR_LiveCounter = lc;
-
+				cout << "LiveCounter is " << lc << endl;
 				//print a frame's data in hex
 				for (int i = 0; i < frame.can_dlc; i++) {
 					cout << std::hex << (int)frame.data[i] << " "; 

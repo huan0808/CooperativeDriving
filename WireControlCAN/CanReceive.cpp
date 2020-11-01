@@ -1,4 +1,3 @@
-// TODO: check if there is any unnecessary header
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,8 +16,6 @@
 
 #include "canStruct.hpp"
 #include <math.h>
-//sudo ip link add dev vcan0 type vcan 
-//sudo ifconfig vcan0 up
 
 int main(int argc, char **argv) {
 	using namespace std;
@@ -78,33 +75,22 @@ int main(int argc, char **argv) {
 			case 0x50A: {
 				cout << "receive 0x50A " << endl;
 
-				//SR_CurrentSteeringAngle
+				
 				/*
-				Signal Name	         Byte Order	Value Type	Start Bit	Length	Factor	Offset	Unit	Value Table	Comment
-
-				SR_CurrentSteeringAngle	Intel	Unsigned	8	          14      0.1 	-600	deg		方向盘当前转角，左负右正
 
 					decode version 1
 				    CAN use little endian , 
-					When we meet cross-byte signal we can left shift 8 bit of the second frame's bits  , then plus first frame's bits which we need .
-					after that we make a & calculation to save the low bits which we need.
+					When we meet cross-byte signal we convert second byte to int and left shift 1-8 bit , then plus first frame's bits which we need .
+					after that we make a & calculation to save the low bits we need.
 					finally we multiply the factor and plus the offset.
 					*** note  that symbol "+"  has higher priority than  "<<" ***
 
 				*/
-
-				double CSA = ((((int)frame.data[2] << 8 ) + frame.data[1]) & ((2 << 14) - 1)) * 0.1 - 600;				
+				
+				//SR_CurrentSteeringAngle
+				double CSA = ((((int)frame.data[2] << 8 ) + frame.data[1]) & ((1 << 14) - 1)) * 0.1 - 600;				
 				cout << hex << CSA <<endl;
 
-
-				/*
-					decode version 2
-					
-					bitset<14> csa = ((frame.data[2] <<2 ) >> 2);
-					csa = (csa.to_ulong() << 8) + frame.data[1];
-					cout << csa.to_string() << endl;
-					double CSA = -600 + 0.1 * (int)(csa.to_ulong());
-				*/
 
 				if (CSA < 0) {
 					cout << "current steering Angle is left " << -1*CSA <<" deg" <<endl;
@@ -118,14 +104,14 @@ int main(int argc, char **argv) {
 
 				//SR_CurrentSteeringSpeed
 				
-				double CSS = ((frame.data[3] << 8) + (frame.data[2] >> 6)) & ((2 << 10) - 1);
+				double CSS = (((int)frame.data[3] << 2) + (frame.data[2] >> 6)) & ((1 << 10) - 1);
 
 				
 				cout << "current steering speed is " << CSS << " deg/s" << endl;
 				sr.SR_CurrentSteeringSpeed = CSS;
 
 				//SR_HandTorque
-				double HT = (((frame.data[5] << 8) + frame.data[4]) & ((2 << 10) - 1)) * 0.01;
+				double HT = ((((int)frame.data[5] << 8) + frame.data[4]) & ((1 << 10) - 1)) * 0.01;
 				cout << "current HandTorque is " << HT << "NM" << endl;
 				sr.SR_HandTorque = HT;
 
@@ -138,10 +124,9 @@ int main(int argc, char **argv) {
 				else{
 					cout << "current HandTorqueSign is Right" << endl;
 				}
-				//sr.SR_CurrentSteeringAngle = (uint8_t)frame.data[1]*
-
+				
 				//SR_WorkMode
-				int WM = (int) ((frame.data[5] >> 3) & ((2 << 3) - 1));
+				int WM = (int) ((frame.data[5] >> 3) & ((1 << 3) - 1));
 				sr.SR_WorkMode = WM;
 				if(WM == 0)
 				{
@@ -162,7 +147,7 @@ int main(int argc, char **argv) {
 
 				//SR_HandTorqueLimit
 
-				double HTL = (((frame.data[6] << 8) + (frame.data[5] >> 6)) & ((2 << 10) - 1)) * 0.01;
+				double HTL = ((((int)frame.data[6] << 2) + (frame.data[5] >> 6)) & ((1 << 10) - 1)) * 0.01;
 				sr.SR_HandTorqueLimit = HTL;
 				cout << "current HandTorqueLimit is " << HTL << " NM" << endl;
 				//SR_Error
@@ -198,7 +183,7 @@ int main(int argc, char **argv) {
 				}
 				
 				//liveCounter
-				double lc = (frame.data[7] >> 4) & ((2 << 4) - 1) ;
+				double lc = (frame.data[7] >> 4) & ((1 << 4) - 1) ;
 				sr.SR_LiveCounter = lc;
 				cout << "LiveCounter is " << lc << endl;
 				//print a frame's data in hex

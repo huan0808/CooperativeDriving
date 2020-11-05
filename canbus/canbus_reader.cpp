@@ -19,10 +19,15 @@
 #include "canStruct.hpp"
 #include <math.h>
 
-void CanReader::read_steering_report(SteeringReport* const steering_report) {
-
+bool CanBusReader::read_steering_report(SteeringReport* const steering_report) {
+  	int s = 0;
+	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) { 
+		perror("Socket");
+		return false;
+	}
+    
 }
 
-void CanReader::read_chassis_report(ChassisReport* const chassis_report) {
+bool CanBusReader::read_chassis_report(ChassisReport* const chassis_report) {
 
 }

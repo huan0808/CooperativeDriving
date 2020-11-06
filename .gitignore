@@ -1,2 +1,5 @@
 # VSCode files
 .vscode
+
+# Build folders
+canbus/build

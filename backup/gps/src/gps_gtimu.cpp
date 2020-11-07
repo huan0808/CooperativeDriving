@@ -37,9 +37,11 @@ int main(int argc,char ** argv)
     }
     catch(serial::IOException& e)
     {
+        
         ROS_ERROR_STREAM("Unable to open port.");
         return -1;
     }
+
     //判断串口是否打开成功
     if(sp.isOpen())
     {
@@ -161,7 +163,7 @@ int main(int argc,char ** argv)
             msg.Tpr=Tpr;
             msg.IMU_Cs=IMU_Cs;
             msg.IMU_CrLf=IMU_CrLf;
-            std::cout <<"GTIMU:   "<<str<< std::endl;
+            //std::cout <<"GTIMU:   "<<str<< std::endl;
             ROS_INFO("IMU_Header:%s",msg.IMU_Header.c_str());
             ROS_INFO("IMU_GPSWeek:%s",msg.IMU_GPSWeek.c_str());
             ROS_INFO("IMU_GPSTime:%s",msg.IMU_GPSTime.c_str());

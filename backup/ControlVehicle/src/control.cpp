@@ -22,7 +22,7 @@ public:
         sub2 = n.subscribe("Serial", buff2, &ReceiveInfo::SerialReceive, this);
     }
 
-    void CANReceive(const canbus::CanFrame::ConstPtr& msg);
+    void CANReceive(const CAN::frame::ConstPtr& msg);
     void SerialReceive(const Serial::String::ConstPtr& msg);
     void receive();
 private:
@@ -47,19 +47,12 @@ void VehicleControl::receive()
 
 void VehicleControl::CANReceive(const CAN::frame::ConstPtr& msg)
 {
-    //ROS_INFO("I heard [%s]",msg->data.c_str());
-    //TODO
+    ROS_INFO("I heard [%s]",msg->data.c_str());
 }
 
 void VehicleControl::SerialReceive(const Serial::String::ConstPtr& msg)
 {
-    //ROS_INFO("I heard [%s]",msg->data.c_str());
-    //TODO
+    ROS_INFO("I heard [%s]",msg->data.c_str());
 }
-int main(int argc ,char ** argv)
-{
-    ros::init(argc,argv,"control");
-    VehicleControl control(10,10,10);
-    control.receive();
-    return 0;
-}
+
+

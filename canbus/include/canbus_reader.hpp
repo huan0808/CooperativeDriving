@@ -10,7 +10,7 @@ public:
     CanBusReader() = default;
     ~CanBusReader() = default;
     bool InitSocket();
-    bool ReadCanBus(SteeringReport* const steering_report, ChassisReport* const chassis_report);
+    int ReadCanBus(SteeringReport* const steering_report, ChassisReport* const chassis_report);
     bool CloseSocket();
 private:
     int s_ = 0;
@@ -18,4 +18,5 @@ private:
     void PrintSteeringReport(const SteeringReport& steering_report);
     void PrintVehicleInfo(const ChassisReport& chassis_report);
     void PrintSInfo2(const ChassisReport& chassis_report);
+    bool DataCheck(const can_frame& frame);
 };

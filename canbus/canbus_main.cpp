@@ -6,7 +6,7 @@
 #include "chassis_report.hpp"
 #include "steering_report.hpp"
 
-#define CANBUS_T 1.0 // in seconds
+#define CANBUS_T 0.01 // in seconds
 
 int main(int argc, char **argv) {
     using namespace std;
@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
 
     if (!canbus_reader.CloseSocket()) {
         cout << "Close socket failed" << endl;
+        return 1;
     } else {
         cout << "Close socket succuss" << endl;
     }

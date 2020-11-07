@@ -2,6 +2,7 @@
 #include "gps_read.hpp"
 #include "location/gps.h"
 #include <signal.h>
+#include <ros/ros.h>
 
 #define GPS_HZ 100 
 

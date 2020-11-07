@@ -13,15 +13,25 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#incldue <signal.h>
+#incldue <cstdlib>
+#incldue <unistd.h>
+
 using namespace std; 
+
+serial::Serial sp;
+
+
+int HexStr2Int(string & hs);
 int FPD_Data_Check(uint8_t a[],int length);
 int GPS_Data_Check(string hex_n,int dex);
+void signal_callback_handler(int signum);
 int main(int argc,char ** argv)
 {
     ros::init(argc,argv,"gps_gpfpd"); //解析参数，命名节点
     ros::NodeHandle nh; //创建句柄，实例化node
     gps::gps_gpfpd msg; //创建gps消息
-    serial::Serial sp;
+   
     ros::Publisher pub = nh.advertise<gps::gps_gpfpd>("gps_gpfpd",1); //创建publisherW  
     ros::Rate loop_rate(1.0); //定义循环发布的频率
     serial::Timeout to = serial::Timeout::simpleTimeout(100);
@@ -51,9 +61,13 @@ int main(int argc,char ** argv)
         return -1;
     }
     
-    clock_t startTime,endTime;    
+    clock_t startTime,endTime;
+
+    signal(SIGINT, signal_callback_handler);    
+
     while(ros::ok())
     {
+
         startTime = clock();//计时开始
         size_t n = sp.available();
         string str;
@@ -89,7 +103,7 @@ int main(int argc,char ** argv)
             {
                 if(buffer[i]==',')
                 {
-                    num++;
+                    num++; 
                 }
                 else 
                 {
@@ -151,13 +165,13 @@ int main(int argc,char ** argv)
                     }
                     else if(num==14)
                     {
-                        NSV2+=buffer[i];
+                        NSV2 += buffer[i];
                     }
-                    else if(num==15)
+                    else if(num == 15)
                     {
                         if(flag<2)
                         {
-                            Status+=buffer[i];
+                            Status += buffer[i];
                         }
                         else if(flag>=2&&flag<5)
                         {
@@ -206,7 +220,46 @@ int main(int argc,char ** argv)
             ROS_INFO("Baseline:%s",msg.Baseline.c_str());
             ROS_INFO("NSV1:%s",msg.NSV1.c_str());
             ROS_INFO("NSV2:%s",msg.NSV2.c_str());
-            ROS_INFO("Status:%s",msg.Status.c_str());
+            if(HexStr2Int(msg.Status) == 0)
+            {
+                ROS_INFO("Status: 0 ");
+            }
+            else if(HexStr2Int(msg.Status) == 1)
+            {
+                ROS_INFO("Status: 1 ");
+            }
+            else if(HexStr2Int(msg.Status) == 2)
+            {
+                ROS_INFO("Status: 2 ");
+            }
+            else if(HexStr2Int(msg.Status) == 3)
+            {
+                ROS_INFO("Status: 3 ");
+            }
+            else if(HexStr2Int(msg.Status) == 4)
+            {
+                ROS_INFO("Status: 4 ");
+            }
+            else if(HexStr2Int(msg.Status) == 5)
+            {
+                ROS_INFO("Status: 5 ");
+            }
+            else if(HexStr2Int(msg.Status) == 6)
+            {
+                ROS_INFO("Status: 6 ");
+            }
+            else if(HexStr2Int(msg.Status) == 7)
+            {
+                ROS_INFO("Status: 7 ");
+            }
+            else if(HexStr2Int(msg.Status) == 8)
+            {
+                ROS_INFO("Status: 8 ");
+            }
+            else if(HexStr2Int(msg.Status) == 9)
+            {
+                ROS_INFO("Status: 9 ");
+            }
             ROS_INFO("FPD_Cs:%s",msg.FPD_Cs.c_str());
             ROS_INFO("FPD_CrLf:%s",msg.FPD_CrLf.c_str());
             pub.publish(msg); //发布消息
@@ -326,4 +379,30 @@ int GPS_Data_Check(string hex_n,int dex)
         return 1;
         
     }
+}
+int HexStr2Int(string & hs)
+{
+    int ans = 0;
+    for(int i = hs.size() - 1; i >= 0; i-- )
+    {
+        if(hs[i] >= 'A' && hs[i] <= 'F')
+        {
+            ans += (hs[i] - 'A' + 10)* pow(16,i);
+        }
+        else
+        {
+            ans += (hs[i] - '0')* pow(16,i);
+        }
+        
+    }
+    return ans;
+}
+
+
+void signal_callback_handler(int signum) {
+   cout << "close the serial "  << endl;
+
+   sp.close();
+   // Terminate program
+   exit(signum);
 }

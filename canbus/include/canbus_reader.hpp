@@ -10,7 +10,7 @@ public:
     CanBusReader() = default;
     ~CanBusReader() = default;
     bool InitSocket();
-    int ReadCanBus(SteeringReport* const steering_report, ChassisReport* const chassis_report);
+    bool ReadCanBus(SteeringReport* const steering_report, ChassisReport* const chassis_report);
     bool CloseSocket();
 private:
     int s_ = 0;

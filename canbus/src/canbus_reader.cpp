@@ -54,8 +54,8 @@ bool CanBusReader::InitSocket() {
 	return true;
 }
 
-int CanBusReader::ReadCanBus(SteeringReport* const steering_report,
-                               ChassisReport* const chassis_report) {
+bool CanBusReader::ReadCanBus(SteeringReport* const steering_report,
+                             ChassisReport* const chassis_report) {
 	using namespace std;
 
 	can_frame frame;
@@ -63,12 +63,11 @@ int CanBusReader::ReadCanBus(SteeringReport* const steering_report,
 	int nbytes = read(s_, &frame, sizeof(can_frame));
 	if (nbytes < 0) {
 		perror("Read error");
-		return 2;
+		return false;
 	}
-	if(!DataCheck(frame))
-	{
-		cout << "this is a error frame" << endl;
-		return 1;
+	if(!DataCheck(frame)) {
+		cout << "This is an error frame" << endl;
+		return false;
 	}
 	switch(frame.can_id) {
 		case HSEVHU_SR_ID: {
@@ -147,7 +146,7 @@ int CanBusReader::ReadCanBus(SteeringReport* const steering_report,
 			break;
 		}
 	}
-	return 0;
+	return true;
 }
 
 bool CanBusReader::CloseSocket() {
@@ -336,8 +335,7 @@ void CanBusReader::PrintSInfo2(const ChassisReport& chassis_report) {
 
 bool CanBusReader::DataCheck(const can_frame& frame){
 	uint8_t CheckSum = frame.data[0];
-	for(int i = 1; i < frame.can_dlc; ++i)
-	{
+	for(int i = 1; i < frame.can_dlc; ++i) {
 		CheckSum ^= frame.data[i];
 	}
 	return CheckSum == 0;

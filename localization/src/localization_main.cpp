@@ -11,8 +11,6 @@ int serial_port = 0;
 //caught ctrl^c interrupt
 void signal_callback_handler(int signum);
 
-
-
 int main(int argc ,char **argv){
     using namespace std;
 
@@ -53,7 +51,6 @@ int main(int argc ,char **argv){
     }
     
     return 0;
-    
 }
 
 void signal_callback_handler(int signum) {

@@ -35,14 +35,9 @@ int main(int argc, char **argv) {
 
     while (true) {
         const auto start_t = chrono::system_clock::now();
-        int ReadFlag = canbus_reader.ReadCanBus(&str_report, &chas_report);
-        if (ReadFlag == 2) {
+        if (!canbus_reader.ReadCanBus(&str_report, &chas_report)) {
             cout << "Read canbus failed!" << endl;
-            //TODO: break?
-        }
-        else if (ReadFlag == 1){
-            continue;
-        }
+        };
         const auto end_t = chrono::system_clock::now();
         const auto elapsed_t = chrono::duration<double>(end_t - start_t);
         if (elapsed_t.count() < CANBUS_T) {

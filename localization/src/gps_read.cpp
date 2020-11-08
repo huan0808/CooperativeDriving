@@ -62,14 +62,19 @@ bool GpsReader::InitSerial(){
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
         return 0;
     }
-    close(serial_port);
+
     return true; // success
 }
 
-int GpsReader::ReadGps(GpsReport* gps_report){
-    unsigned char buffer[1024];
+//TODO:
+//how to make sure we don't miss  frames
+
+int GpsReader::ReadGps(GpsReport* const gps_report){
+    char buffer[1024];
     memset(buffer,0, sizeof(buffer));
+    
     int n = read(serial_port, &buffer, sizeof(buffer));
+
     if ( n < 0) {
         perror("read");
         return 2;
@@ -78,21 +83,32 @@ int GpsReader::ReadGps(GpsReport* gps_report){
     {
         return 1;
     }
+    GPS_STR += string(buffer);
     int num = 0;
     vector<string> gps_info;
     string temp;
+    int flag = 0;
     for(int i = 0; i < 1024; i++)
     {
-        if(buffer[i] == '\n'){
+        if(flag == 1 && buffer[i] == '\r\n'){
+            
             //cout << buffer[i];
             break;
         }
-        if(buffer[i]==',')
-        {
-            gps_info.push_back(temp);
-            temp.clear();
+        if(buffer[i] == '$'){
+            flag = 1;
         }
-        temp += buffer[i];
+        if(flag){
+            if(buffer[i] == ','){
+                gps_info.push_back(temp);
+                temp.clear();
+            }
+            else{
+                temp += buffer[i];
+            }
+            
+        }
+        
     }
     int n = 0;
     gps_report->FPD_Header = gps_info[n++];
@@ -116,6 +132,8 @@ int GpsReader::ReadGps(GpsReport* gps_report){
 
     return 0;
 }
+
+
 bool GpsReader::CloseSerial(){
     if(close(serial_port) == -1){
         cout << "close error" << endl;
@@ -123,8 +141,7 @@ bool GpsReader::CloseSerial(){
     }
     return true;
 }
-
-int GpsReader::FPD_Data_Check(uint8_t a[],int length)//GPS数据校验
+int GpsReader::FPD_Data_Check(char a[],int length)//GPS数据校验
 {
     int head_n=6;
     string head_str; //帧头
@@ -133,11 +150,11 @@ int GpsReader::FPD_Data_Check(uint8_t a[],int length)//GPS数据校验
     int CS_dex; 
     unsigned char CS=0;
     int chang=0;
-    for(int i=0;i<length-2;i++)
+    for(int i=0; i<length-2;i++)
     {
         if(i<head_n)
         {
-            head_str+=a[i];
+            head_str += a[i];
         }
         if(flag==3)
         {

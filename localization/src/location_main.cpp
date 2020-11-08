@@ -1,8 +1,8 @@
 #include "gsp_report.hpp"
 #include "gps_read.hpp"
-#include "location/gps.h"
+#include "localization/gps.h"
+#include "ros/ros.h"
 #include <signal.h>
-#include <ros/ros.h>
 
 #define GPS_HZ 100 
 
@@ -20,7 +20,7 @@ int main(int argc ,char **argv){
     signal(SIGINT, signal_callback_handler);
     ros::init(argc,argv,"Gps");
     ros::NodeHandle n;
-    ros::Publisher pub_to_GPSINFO = n.advertise<location::gps>("GPS_INFO",1000);
+    ros::Publisher pub_to_GPSINFO = n.advertise<localization::gps>("GPS_INFO",1000);
     ros::loop_rate(GPS_HZ);
 
     GpsReader gps_read;
@@ -33,10 +33,12 @@ int main(int argc ,char **argv){
     }
     serial_port = gps_read.serial_port;
 
-    while(ros::ok())
-    {
-        gps_read.ReadGps(&gps_report);
-        location::gps msg;
+    while(ros::ok()){
+        if(gps_read.ReadGps(&gps_report) == 1)
+        {
+            continue;
+        }
+        localization::gps msg;
 
         //TODO
         // init gps msg

@@ -1,0 +1,13 @@
+Int32 VI_GearInfo  
+Int32 VI_BrakeInfo  
+Int32 VI_Button1  
+Int32 VI_Button2  
+Int32 VI_HandBrakeSt  
+Int32 VI_JerkSt  
+Float64 VI_AccelPedalPosition  
+Float64 VI_FrontSteeringAngle  
+Float64 VI_RemainingTimes  
+Float64 VI_VehicleSpeed  
+Float64 SI2_LongitudinalAccel  
+Float64 SI2_LateralAccel  
+Float64 SI2_YawRate  

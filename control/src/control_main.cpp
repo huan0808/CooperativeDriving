@@ -1,15 +1,29 @@
-#include <chrono>
+#include "CAN/frame.h"
+#include "Serial/String.h"
+#include <unistd.h>
 #include <iostream>
+#include <cstdlib>
+#include "msg_receive.hpp"
 #include <thread>
-
 #include "control_sender.hpp"
 
 #define CONTROL_T 0.02 // in seconds
 
-int main(int argc, char **argv) {
-    using namespace std;
+#define RECEIVE_HZ 50
 
+int main(int argc ,char ** argv)
+{
+    using namespace std;
     cout << " ========= Starting Control Module =========== " << endl;
+    /*
+        ros::init(argc,argv,"control");
+        ros::Rate(RECEIVE_HZ);
+        //TODO:
+        //create a thread to receive msg from ROS?
+        MsgReceive msg_receive(RECEIVE_HZ,10,10);
+        msg_receive.receive();
+    */
+ 
     ControlSender control_sender;
     if (!control_sender.InitSocket()) {
         cout << "Init socket failed" << endl;
@@ -17,6 +31,7 @@ int main(int argc, char **argv) {
     } else {
         cout << "Init socket success" << endl;
     }
+
 
     while (true) {
         const auto start_t = chrono::system_clock::now();
@@ -26,8 +41,8 @@ int main(int argc, char **argv) {
         control_sender.ControlAccel(accel_command);
         const auto end_t = chrono::system_clock::now();
         const auto elapsed_t = chrono::duration<double>(end_t - start_t);
-        if (elapsed_t.count() < CANBUS_T) {
-            const auto remaining_t = chrono::duration<double>(CANBUS_T) - elapsed_t;
+        if (elapsed_t.count() < CONTROL_T) {
+            const auto remaining_t = chrono::duration<double>(CONTROL_T) - elapsed_t;
             // cout << "Control thread sleeps for " << remaining_t.count() << " seconds." << endl;
             this_thread::sleep_for(remaining_t);
         } else {

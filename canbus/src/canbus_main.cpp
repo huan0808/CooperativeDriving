@@ -5,13 +5,24 @@
 #include "canbus_reader.hpp"
 #include "chassis_report.hpp"
 #include "steering_report.hpp"
+#include "ros/ros.h"
+
 
 #define CANBUS_T 0.01 // in seconds
+#define SEND_HZ 100
 
 int main(int argc, char **argv) {
     using namespace std;
 
     cout << " ========= Starting Canbus Module =========== " << endl;
+    /*
+    ros::init(argc,argv,"can");
+    ros::Rate(SEND_HZ);
+    ros::NodeHandle n;
+    ros::Publisher pub_to_CANINFO = n.advertise<canbus::CanFrame>("CAN_INFO",1000);
+    //TODO: 
+    //create a thread to send msg to ROS?
+    */
     CanBusReader canbus_reader;
     SteeringReport str_report;
     ChassisReport chas_report;

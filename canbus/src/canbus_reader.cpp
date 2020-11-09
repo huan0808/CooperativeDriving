@@ -59,7 +59,9 @@ bool CanBusReader::InitSocket() {
 
 
 bool CanBusReader::ReadCanBus() {
-
+    //TODO(huan): 是不是可以抛弃掉steering_report和chassis_report这两个量
+	// 直接定义一个类成员canbus::frame msg_，然后在ReadCanBus里写这个成员，在
+	// PublishToRos里发这个成员，这样可以避免在PublishToRos进行的赋值操作（不过问题不大）
 	using namespace std;
 
 	can_frame frame;
@@ -358,7 +360,8 @@ void CanBusReader::PublishToRos(){
 	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
 	ros::Publisher pub_to_CANINFO = this->n.advertise<canbus::frame>("CAN_INFO",1000);
 	canbus::frame msg;
-
+    //TODO(huan): 这里有一个问题是，无法确保在往外发消息的时候，chassis_report和steering_report已经接收到过有效的信息了
+	//所以有可能会往外发-99.99和-99这样的数据。考虑加一个标志位，仅当已经接收到过chassis_report和steering_report后再往外发送
 	while(ros::ok()){
 		rw_mutex.lock();
 
@@ -397,7 +400,7 @@ void CanBusReader::PublishToRos(){
 
 void CanBusReader::StartRead(){
 	using namespace std;
-	std::cout << "start receive thread id is" << std::this_thread::get_id() << endl;
+	cout << "start receive thread id is" << this_thread::get_id() << endl;
 	if (!InitSocket()) {
         cout << "Init socket failed" << endl;
         return ;
@@ -406,7 +409,7 @@ void CanBusReader::StartRead(){
     }
 	while (ros::ok()) {
         const auto start_t = chrono::system_clock::now();
-
+        //TODO(huan): 这个线程能不能也用ros::Rate来控制频率呢？请确认。
 		if (!ReadCanBus()) {
 			cout << "Read canbus failed!" << endl;
 		}

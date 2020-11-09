@@ -57,7 +57,12 @@ bool CanBusReader::InitSocket() {
 	return true;
 }
 
+<<<<<<< HEAD
 bool CanBusReader::ReadCanBus() {
+=======
+bool CanBusReader::ReadCanBus(SteeringReport* const steering_report,
+                             ChassisReport* const chassis_report) {
+>>>>>>> 148e6f13f4a6414c360c38418abb1ae10e8aed2b
 	using namespace std;
 
 	can_frame frame;
@@ -67,9 +72,14 @@ bool CanBusReader::ReadCanBus() {
 		perror("Read error");
 		return false;
 	}
+<<<<<<< HEAD
 	if(!DataCheck(frame))
 	{
 		cout << "this is a error frame" << endl;
+=======
+	if(!DataCheck(frame)) {
+		cout << "This is an error frame" << endl;
+>>>>>>> 148e6f13f4a6414c360c38418abb1ae10e8aed2b
 		return false;
 	}
 	rw_mutex.lock();
@@ -149,9 +159,12 @@ bool CanBusReader::ReadCanBus() {
 			break;
 		}
 	}
+<<<<<<< HEAD
 	rw_mutex.unlock();
 
 
+=======
+>>>>>>> 148e6f13f4a6414c360c38418abb1ae10e8aed2b
 	return true;
 }
 
@@ -343,7 +356,11 @@ void CanBusReader::PrintSInfo2() {
 
 bool CanBusReader::DataCheck(const can_frame& frame){
 	uint8_t CheckSum = frame.data[0];
+<<<<<<< HEAD
 	for(int i = 1; i < frame.can_dlc; ++i){
+=======
+	for(int i = 1; i < frame.can_dlc; ++i) {
+>>>>>>> 148e6f13f4a6414c360c38418abb1ae10e8aed2b
 		CheckSum ^= frame.data[i];
 	}
 	return CheckSum == 0;

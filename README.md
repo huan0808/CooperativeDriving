@@ -9,5 +9,7 @@ catkin_make
 roscore
 
 ```
-打开新的终端运行
+打开新的终端运行启动文件
+```
 roslaunch canbus main.launch
+```

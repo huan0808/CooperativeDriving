@@ -1,66 +1,27 @@
-#include <chrono>
 #include <iostream>
 #include <thread>
 
 #include "canbus_reader.hpp"
 #include "chassis_report.hpp"
 #include "steering_report.hpp"
-#include "ros/ros.h"
-
-
-#define CANBUS_T 0.01 // in seconds
-#define SEND_HZ 100
 
 int main(int argc, char **argv) {
-    using namespace std;
 
-    cout << " ========= Starting Canbus Module =========== " << endl;
-    /*
+    std::cout << " ========= Starting Canbus Module =========== " << std::endl;
+    
     ros::init(argc,argv,"can");
-    ros::Rate(SEND_HZ);
-    ros::NodeHandle n;
-    ros::Publisher pub_to_CANINFO = n.advertise<canbus::CanFrame>("CAN_INFO",1000);
-    //TODO: 
-    //create a thread to send msg to ROS?
-    */
+
+
+    std::cout <<"ok"<<std::endl;
+    
     CanBusReader canbus_reader;
-    SteeringReport str_report;
-    ChassisReport chas_report;
-    if (!canbus_reader.InitSocket()) {
-        cout << "Init socket failed" << endl;
-        return 1;
-    } else {
-        cout << "Init socket success" << endl;
-    }
 
-    while (true) {
-        const auto start_t = chrono::system_clock::now();
-        int ReadFlag = canbus_reader.ReadCanBus(&str_report, &chas_report);
-        if (ReadFlag == 2) {
-            cout << "Read canbus failed!" << endl;
-            //TODO: break?
-        }
-        else if (ReadFlag == 1){
-            continue;
-        }
-        const auto end_t = chrono::system_clock::now();
-        const auto elapsed_t = chrono::duration<double>(end_t - start_t);
-        if (elapsed_t.count() < CANBUS_T) {
-            const auto remaining_t = chrono::duration<double>(CANBUS_T) - elapsed_t;
-            // cout << "Canbus thread sleeps for " << remaining_t.count() << " seconds." << endl;
-            this_thread::sleep_for(remaining_t);
-        } else {
-            cout << "Warning: canbus loop spent " << elapsed_t.count() << " seconds larger than " 
-                 << CANBUS_T << " seconds. " << endl;
-        }
-    }
 
-    if (!canbus_reader.CloseSocket()) {
-        cout << "Close socket failed" << endl;
-        return 1;
-    } else {
-        cout << "Close socket succuss" << endl;
-    }
+    std::thread read_t(&CanBusReader::StartRead,&canbus_reader);
+    //create a thread publish to CAN_INFO node
+    std::thread pub_t(&CanBusReader::PublishToRos,&canbus_reader);
 
+    read_t.join();
+    pub_t.join();
     return 0;
 }

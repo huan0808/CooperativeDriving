@@ -118,7 +118,6 @@ int GpsReader::ReadGps(GpsReport* const gps_report){
     gps_report->Pitch = gps_info[n++];
     gps_report->Roll = gps_info[n++];
     gps_report->Lattitude = gps_info[n++];
-    gps_report->Lattitude = gps_info[n++];
     gps_report->Longitude = gps_info[n++];
     gps_report->Altitude = gps_info[n++];
     gps_report->Ve = gps_info[n++];

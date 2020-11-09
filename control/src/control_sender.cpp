@@ -109,7 +109,7 @@ bool ControlSender::CloseSocket() {
 void ControlSender::SteeringControlToCanFrameData(
     const SteeringControl& steer_control, can_frame* const frame) {
     if(steer_control.SC_SteeringControlRequest == 0){
-        frame->data[1] = 0x00; 
+        frame->data[1] = 0; 
     }
     else if(steer_control.SC_SteeringControlRequest == 1){
         frame->data[1] = 1;

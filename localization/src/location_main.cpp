@@ -44,7 +44,6 @@ int main(int argc ,char **argv){
         // init gps msg
 
         pub_to_GPSINFO.publish(msg);
-        ros::spinOnce();
         loop_rate.sleep();
     }
     if(gps_read.CloseSerial() == false){

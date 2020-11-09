@@ -14,13 +14,13 @@ public:
         sub2 = n.subscribe("Serial_INFO", buff2, &ReceiveInfo::SerialReceive, this);
     }
 
-    void CANReceive(const canbus::CanFrame::ConstPtr& msg);
-    void SerialReceive(const Serial::String::ConstPtr& msg);
+    void CANReceive(const canbus::frame::ConstPtr& msg);
+    void SerialReceive(const localization::gps::ConstPtr& msg);
     void receive();
 private:
     ros::NodeHandle n;
     ros::Rate loop_rate;
     ros::Subscriber sub1;
     ros::Subscriber sub2;
-    int frame = 0;
+    int frameNum = 0;
 };

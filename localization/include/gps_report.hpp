@@ -1,7 +1,7 @@
 #include <string>
-using namespace std;
-struct GpsReport{
 
+struct GpsReport{
+    using std::string;
     string FPD_Header;
     string FPD_GPSWeek;
     string FPD_GPSTime;

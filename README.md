@@ -6,5 +6,8 @@
 在ros的catkin_ws目录下运行
 ```
 catkin_make
-roslaunch canbus main.launch
+roscore
+
 ```
+打开新的终端运行
+roslaunch canbus main.launch

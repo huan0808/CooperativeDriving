@@ -11,11 +11,7 @@ int main(int argc, char **argv) {
     
     ros::init(argc,argv,"can");
 
-
-    std::cout <<"ok"<<std::endl;
-    
     CanBusReader canbus_reader;
-
 
     std::thread read_t(&CanBusReader::StartRead,&canbus_reader);
     //create a thread publish to CAN_INFO node

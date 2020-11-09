@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="canbus" type="_canbus" name = "can" output = "screen"/>
+</launch>
+

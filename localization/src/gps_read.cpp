@@ -102,14 +102,14 @@ bool GpsReader::StartReadGps(){
             return false;
         }
 
-        GPS_STR.assign(buffer);
-        auto begin = GPS_STR.find('$');
-        auto end = GPS_STR.find('\n');
+        GPS_STR_.assign(buffer);
+        auto begin = GPS_STR_.find('$');
+        auto end = GPS_STR_.find('\n');
         int flagGP = 0;
         int flagGT = 0;
 
         while((flagGP == 0 || flagGT == 0) && begin != -1 && end != -1){
-            string FrameData = GPS_STR.substr(begin , end - begin);
+            string FrameData = GPS_STR_.substr(begin , end - begin);
             string temp;
             vector<string> INFO;
             for(auto c : FrameData){
@@ -120,56 +120,56 @@ bool GpsReader::StartReadGps(){
                 }
                 temp += c;
             }
-            rw_mutex.lock();
+            rw_mutex_.lock();
 
-            if(GPS_STR[begin+2] == 'P'){
+            if(GPS_STR_[begin+2] == 'P'){
                 flagGP = 1;
                 int n = 0;
-                gps_report.FPD_Header = INFO[n++];
-                gps_report.FPD_GPSWeek = INFO[n++];
-                gps_report.FPD_GPSTime = INFO[n++];
-                gps_report.Heading = INFO[n++];
-                gps_report.Pitch = INFO[n++];
-                gps_report.Roll = INFO[n++];
-                gps_report.Lattitude = INFO[n++];
-                gps_report.Longitude = INFO[n++];
-                gps_report.Altitude = INFO[n++];
-                gps_report.Ve = INFO[n++];
-                gps_report.Vn = INFO[n++];
-                gps_report.Vu = INFO[n++];
-                gps_report.Baseline = INFO[n++];
-                gps_report.NSV1 = INFO[n++];
-                gps_report.NSV2 = INFO[n++];
-                gps_report.Status = INFO[n][1];
+                gps_report_.FPD_Header = INFO[n++];
+                gps_report_.FPD_GPSWeek = INFO[n++];
+                gps_report_.FPD_GPSTime = INFO[n++];
+                gps_report_.Heading = INFO[n++];
+                gps_report_.Pitch = INFO[n++];
+                gps_report_.Roll = INFO[n++];
+                gps_report_.Lattitude = INFO[n++];
+                gps_report_.Longitude = INFO[n++];
+                gps_report_.Altitude = INFO[n++];
+                gps_report_.Ve = INFO[n++];
+                gps_report_.Vn = INFO[n++];
+                gps_report_.Vu = INFO[n++];
+                gps_report_.Baseline = INFO[n++];
+                gps_report_.NSV1 = INFO[n++];
+                gps_report_.NSV2 = INFO[n++];
+                gps_report_.Status = INFO[n][1];
                 //TODO
                 //FPD_CS
-                //gps_report.Status = INFO[n][1];
+                //gps_report_.Status = INFO[n][1];
                 //FPR_CRLF
-                //gps_report.Status = INFO[n][1];
+                //gps_report_.Status = INFO[n][1];
             }
             else{
                 flagGT = 1;
                 int n = 0;
-                imu_report.IMU_Header = INFO[n++]; 
-                imu_report.IMU_GPSWeek = INFO[n++]; 
-                imu_report.IMU_GPSTime = INFO[n++]; 
-                imu_report.GyroX = INFO[n++]; 
-                imu_report.GyroY = INFO[n++]; 
-                imu_report.GyroZ = INFO[n++]; 
-                imu_report.AccX = INFO[n++]; 
-                imu_report.AccY = INFO[n++]; 
-                imu_report.AccZ = INFO[n++]; 
-                imu_report.Tpr = INFO[n++]; 
+                imu_report_.IMU_Header = INFO[n++]; 
+                imu_report_.IMU_GPSWeek = INFO[n++]; 
+                imu_report_.IMU_GPSTime = INFO[n++]; 
+                imu_report_.GyroX = INFO[n++]; 
+                imu_report_.GyroY = INFO[n++]; 
+                imu_report_.GyroZ = INFO[n++]; 
+                imu_report_.AccX = INFO[n++]; 
+                imu_report_.AccY = INFO[n++]; 
+                imu_report_.AccZ = INFO[n++]; 
+                imu_report_.Tpr = INFO[n++]; 
                 //TODO
                 /*
-                imu_report.IMU_Cs
-                imu_report.IMU_CrLf
+                imu_report_.IMU_Cs
+                imu_report_.IMU_CrLf
                 */
             }
-            rw_mutex.unlock();
-            GPS_STR.erase(begin, end - begin + 1);
-            auto begin = GPS_STR.find('$');
-            auto end = GPS_STR.find('\n');
+            rw_mutex_.unlock();
+            GPS_STR_.erase(begin, end - begin + 1);
+            auto begin = GPS_STR_.find('$');
+            auto end = GPS_STR_.find('\n');
         }
 
         const auto end_t = chrono::system_clock::now();
@@ -208,51 +208,51 @@ bool GpsReader::CloseSerial(){
 }
 
 void GpsReader::PublishToRos(){
-    ros::Publisher pub_to_GPSINFO = n.advertise<localization::gps>("INFO",1000);
+    ros::Publisher pub_to_GPSINFO = n_.advertise<localization::gps>("GPS_INFO",1000);
     while(ros::ok()){
         //lock
-        rw_mutex.lock();
+        rw_mutex_.lock();
         localization::gps msg;
         
         //gps info
-        msg.FPD_Header = gps_report.FPD_Header;
-        msg.FPD_GPSWeek = gps_report.FPD_GPSWeek;
-        msg.FPD_GPSTime = gps_report.FPD_GPSTime;
-        msg.Heading = gps_report.Heading;
-        msg.Pitch = gps_report.Pitch;
-        msg.Roll = gps_report.Roll;
-        msg.Lattitude = gps_report.Lattitude;
-        msg.Longitude = gps_report.Longitude;
-        msg.Altitude = gps_report.Altitude;
-        msg.Ve = gps_report.Ve;
-        msg.Vn = gps_report.Vn;
-        msg.Vu = gps_report.Vu;
-        msg.Baseline = gps_report.Baseline;
-        msg.NSV1 = gps_report.NSV1;
-        msg.NSV2 = gps_report.NSV2;
-        msg.Status = gps_report.Status;
-        msg.FPD_Cs = gps_report.FPD_Cs;
-        msg.FPD_CrLf = gps_report.FPD_CrLf;
+        msg.FPD_Header = gps_report_.FPD_Header;
+        msg.FPD_GPSWeek = gps_report_.FPD_GPSWeek;
+        msg.FPD_GPSTime = gps_report_.FPD_GPSTime;
+        msg.Heading = gps_report_.Heading;
+        msg.Pitch = gps_report_.Pitch;
+        msg.Roll = gps_report_.Roll;
+        msg.Lattitude = gps_report_.Lattitude;
+        msg.Longitude = gps_report_.Longitude;
+        msg.Altitude = gps_report_.Altitude;
+        msg.Ve = gps_report_.Ve;
+        msg.Vn = gps_report_.Vn;
+        msg.Vu = gps_report_.Vu;
+        msg.Baseline = gps_report_.Baseline;
+        msg.NSV1 = gps_report_.NSV1;
+        msg.NSV2 = gps_report_.NSV2;
+        msg.Status = gps_report_.Status;
+        msg.FPD_Cs = gps_report_.FPD_Cs;
+        msg.FPD_CrLf = gps_report_.FPD_CrLf;
         
         //imu info
-        msg.IMU_Header = imu_report.IMU_Header;
-        msg.IMU_GPSWeek = imu_report.IMU_GPSWeek;
-        msg.IMU_GPSTime = imu_report.IMU_GPSTime;
-        msg.GyroX = imu_report.GyroX;
-        msg.GyroY = imu_report.GyroY;
-        msg.GyroZ = imu_report.GyroZ;
-        msg.AccX = imu_report.AccX;
-        msg.AccY = imu_report.AccY;
-        msg.AccZ = imu_report.AccZ;
-        msg.Tpr = imu_report.Tpr;
-        msg.IMU_Cs = imu_report.IMU_Cs;
-        msg.IMU_CrLf = imu_report.IMU_CrLf;
+        msg.IMU_Header = imu_report_.IMU_Header;
+        msg.IMU_GPSWeek = imu_report_.IMU_GPSWeek;
+        msg.IMU_GPSTime = imu_report_.IMU_GPSTime;
+        msg.GyroX = imu_report_.GyroX;
+        msg.GyroY = imu_report_.GyroY;
+        msg.GyroZ = imu_report_.GyroZ;
+        msg.AccX = imu_report_.AccX;
+        msg.AccY = imu_report_.AccY;
+        msg.AccZ = imu_report_.AccZ;
+        msg.Tpr = imu_report_.Tpr;
+        msg.IMU_Cs = imu_report_.IMU_Cs;
+        msg.IMU_CrLf = imu_report_.IMU_CrLf;
 
         pub_to_GPSINFO.publish(msg);
 
         //unlock
-        rw_mutex.unlock();
-        loop_rate.sleep();
+        rw_mutex_.unlock();
+        loop_rate_.sleep();
         
     }
 }

@@ -3,7 +3,7 @@
 #include <mutex>
 #include <thread>
 #include "ros/ros.h"
-
+#include "localization/gps.h"
 #define SERIAL_T 0.05
 #define SEND_HZ 100
 #define READ_T 0.01
@@ -20,10 +20,10 @@ public:
 private:
     int FPD_Data_Check(char a[],int length);
     //int GPS_Data_Check(string hex_n,int dex);
-    std::string GPS_STR;
-    std::mutex rw_mutex;
-    ImuReport imu_report;
-    GpsReport gps_report;
-    ros::NodeHandle n;
-    ros::Rate loop_rate = SEND_HZ;
+    std::string GPS_STR_;
+    std::mutex rw_mutex_;
+    ImuReport imu_report_;
+    GpsReport gps_report_;
+    ros::NodeHandle n_;
+    ros::Rate loop_rate_ = SEND_HZ;
 };

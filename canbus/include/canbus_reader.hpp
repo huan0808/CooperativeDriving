@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdio.h>
 #include <linux/can.h>
 
 #include "chassis_report.hpp"
@@ -13,7 +14,7 @@
 
 class CanBusReader {
 public:
-    CanBusReader() = default;
+    CanBusReader();
     ~CanBusReader() = default;
     bool InitSocket();
     //int ReadCanBus(SteeringReport* steering_report, ChassisReport* const chassis_report);
@@ -37,4 +38,8 @@ private:
     ChassisReport chassis_report_;
     std::mutex rw_mutex_;
     ros::Rate loop_rate_ = SEND_HZ;
+    FILE* log_file_ = nullptr;
+    bool HSEVHU_SR_read_ = false;
+    bool HSEVCO_VI_read_ = false;
+    bool HSEVCO_SI2_read_ = false;
 };

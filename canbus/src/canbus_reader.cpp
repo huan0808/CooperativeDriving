@@ -1,6 +1,5 @@
 #include "canbus_reader.hpp"
 #include <chrono>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <unistd.h>
@@ -27,8 +26,39 @@
 #define HSEVCO_SI1_ID 0x68B // 100Hz
 #define HSEVCO_VI_ID 0x68F // 100Hz
 #define HSEVCO_WSI_ID 0x68D // 100Hz
+#define ENABLE_CANBUS_LOG 0
 
-
+CanBusReader::CanBusReader() {
+	if (ENABLE_CANBUS_LOG) {
+		time_t rawtime;
+		char name_buffer[80];
+		std::time(&rawtime);
+		std::tm time_tm;
+		localtime_r(&rawtime, &time_tm);
+		strftime(name_buffer, 80, "/tmp/canbus_log__%F_%H%M%S.csv", &time_tm);
+		log_file_ = fopen(name_buffer, "w");
+		if (log_file_ == nullptr) {
+			std::cout << "Fail to open file:" << name_buffer << std::endl;
+		}
+		if (log_file_ != nullptr) {
+			fprintf(log_file_,
+					"time,"
+					"steering_angle,"
+					"steering_speed,"
+					"hand_torque,"
+					"workmode,"
+					"hand_torque_limit,"
+					"accel_pedal_position",
+					"front_steering_angle",
+					"speed",
+					"lon_accel",
+					"lat_accel",
+					"yaw_rate"
+					"\r\n");
+			fflush(log_file_);
+		}
+	}
+}
 
 bool CanBusReader::InitSocket() {
 	// Create a socket file descriptor
@@ -61,9 +91,7 @@ bool CanBusReader::InitSocket() {
 // 直接定义一个类成员canbus::frame msg_，然后在ReadCanBus里写这个成员，在
 // PublishToRos里发这个成员，这样可以避免在PublishToRos进行的赋值操作（不过问题不大）
 bool CanBusReader::ReadCanBus() {
-
 	using namespace std;
-
 	can_frame frame;
 
 	int nbytes = read(s_, &frame, sizeof(can_frame));
@@ -103,6 +131,7 @@ bool CanBusReader::ReadCanBus() {
 			steering_report_.SR_Warning = ((frame.data[7] >> 2) & 3);
 			//liveCounter
 			steering_report_.SR_LiveCounter = (frame.data[7] >> 4) & ((1 << 4) - 1);
+			HSEVHU_SR_read_ = true;
 			PrintCanFrameDLC(frame);
 			PrintSteeringReport();
 			break;
@@ -133,6 +162,7 @@ bool CanBusReader::ReadCanBus() {
 			// vehicle speed
 			chassis_report_.VI_VehicleSpeed = 
 				((((int)frame.data[7] << 8) + frame.data[6]) & ((1 << 16) - 1)) * 0.01;
+			HSEVCO_VI_read_ = true;
 			PrintCanFrameDLC(frame);
 			PrintVehicleInfo();
 			break;
@@ -148,6 +178,7 @@ bool CanBusReader::ReadCanBus() {
 			// yawrate
 			chassis_report_.SI2_YawRate =
 				((((int)frame.data[4] << 8) + frame.data[3]) & ((1 << 12) - 1)) * 0.05 - 100;
+			HSEVCO_SI2_read_ = true;
 			PrintCanFrameDLC(frame);
 			PrintSInfo2();
 			break;
@@ -155,9 +186,6 @@ bool CanBusReader::ReadCanBus() {
 	}
 
 	rw_mutex_.unlock();
-
-
-
 	return true;
 }
 
@@ -363,8 +391,11 @@ void CanBusReader::PublishToRos(){
 //TODO(huan): 这里有一个问题是，无法确保在往外发消息的时候，chassis_report和steering_report已经接收到过有效的信息了
 //所以有可能会往外发-99.99和-99这样的数据。考虑加一个标志位，仅当已经接收到过chassis_report和steering_report后再往外发送
 	while(ros::ok()){
+		// make sure the messages have been read from canbus before being sent out
+		if (!HSEVHU_SR_read_ || !HSEVCO_VI_read_ || !HSEVCO_SI2_read_) {
+			std::cout << "Messages haven't been read, skip sending " << std::endl;
+		}
 		rw_mutex_.lock();
-
 		//chassis_report_
 		msg.VI_GearInfo = chassis_report_.VI_GearInfo;
 		msg.VI_BrakeInfo = chassis_report_.VI_BrakeInfo;
@@ -383,15 +414,30 @@ void CanBusReader::PublishToRos(){
 		//steering_report_
 		msg.SR_CurrentSteeringAngle = steering_report_.SR_CurrentSteeringAngle;
 		msg.SR_CurrentSteeringSpeed = steering_report_.SR_CurrentSteeringSpeed;
-		msg.SR_HandTorque = steering_report_.SR_HandTorque;
-		msg.SR_HandTorqueSign =  steering_report_.SR_HandTorqueSign;
+		double hand_torque = 0.0;
+		if (steering_report_.SR_HandTorqueSign == 0) { // left
+			hand_torque = steering_report_.SR_HandTorque;
+		} else {
+			hand_torque = -1.0 * steering_report_.SR_HandTorque;
+		}
+		msg.SR_HandTorque = hand_torque;
 		msg.SR_WorkMode = steering_report_.SR_WorkMode;
 		msg.SR_HandTorqueLimit = steering_report_.SR_HandTorqueLimit;
 		msg.SR_Error = steering_report_.SR_Error;
 		msg.SR_Warning = steering_report_.SR_Warning;
 		msg.SR_LiveCounter = steering_report_.SR_LiveCounter;
-
 		pub_to_CANINFO.publish(msg);
+		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
+		if (ENABLE_CANBUS_LOG && log_file_ != nullptr) {
+			fprintf(log_file_,
+			        "%.6f, %.6f, %.6f, %.6f, %d, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f,\r\n",
+					now_in_seconds, steering_report_.SR_CurrentSteeringAngle, steering_report_.SR_CurrentSteeringSpeed,
+					hand_torque, steering_report_.SR_WorkMode, steering_report_.SR_HandTorqueLimit,
+					chassis_report_.VI_AccelPedalPosition, chassis_report_.VI_FrontSteeringAngle,
+					chassis_report_.VI_VehicleSpeed, chassis_report_.SI2_LongitudinalAccel,
+					chassis_report_.SI2_LateralAccel, chassis_report_.SI2_YawRate);
+		}
 		rw_mutex_.unlock();
 		loop_rate_.sleep();
 	}

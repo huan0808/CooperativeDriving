@@ -12,12 +12,9 @@ float64 SI2_LongitudinalAccel
 float64 SI2_LateralAccel  
 float64 SI2_YawRate  
 
-
-
 float64 SR_CurrentSteeringAngle 
 float64 SR_CurrentSteeringSpeed 
-float64 SR_HandTorque 
-int32 SR_HandTorqueSign 
+float64 SR_HandTorque
 int32 SR_WorkMode 
 float64 SR_HandTorqueLimit 
 int32 SR_Error

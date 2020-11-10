@@ -9,7 +9,7 @@
 
 
 #define CANBUS_T 0.01 // in seconds
-#define SEND_HZ 100
+#define SEND_HZ 100   // in seconds TODO(huan)：统一定义成Hz吧，频率可能要调高点
 
 class CanBusReader {
 public:
@@ -17,7 +17,7 @@ public:
     ~CanBusReader() = default;
     bool InitSocket();
     //int ReadCanBus(SteeringReport* steering_report, ChassisReport* const chassis_report);
-    bool ReadCanBus();
+    bool ReadCanBus();//TODO(huan): 由于现在main调用的是StartRead，因此这个可以变成私有成员函数了
     bool CloseSocket();
     void PublishToRos();
     //void PublishToRos(const SteeringReport* const steering_report ,const ChassisReport* const chassis_report);

@@ -19,7 +19,8 @@ public:
     int serial_port;
 private:
     int FPD_Data_Check(char a[],int length);
-    //int GPS_Data_Check(string hex_n,int dex);
+    int GPS_Data_Check(string hex_n,int dex);
+    bool CheckSum(const std::string& frame);
     std::string GPS_STR_;
     std::mutex rw_mutex_;
     ImuReport imu_report_;

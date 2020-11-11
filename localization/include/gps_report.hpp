@@ -18,7 +18,6 @@ struct GpsReport{
     std::string NSV2 = "None";
     std::string Status = "None";
     std::string FPD_Cs = "None";
-    std::string FPD_CrLf = "None";
 };
 
 struct ImuReport{
@@ -33,6 +32,5 @@ struct ImuReport{
     std::string AccZ = "None";
     std::string Tpr = "None";
     std::string IMU_Cs = "None";
-    std::string IMU_CrLf = "None";
 
 };

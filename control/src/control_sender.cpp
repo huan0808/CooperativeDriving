@@ -117,6 +117,18 @@ void ControlSender::SteeringControlToCanFrameData(
     }
     else if(steer_control.SC_SteeringControlRequest == 1){
         frame->data[1] = 1;
+        
+        int tt = steer_control.SC_TargetTorque * 100;
+        //GET tt low 8 bits
+        frame->data[4] |= tt;
+        //GET tt high 2 bits
+        frame->data[5] |= (tt >> 8);
+        //set targettorque sign
+        frame->data[5] |= (steer_control.SC_TargetTorqueSign << 2);
+
+    }    
+    else if(steer_control.SC_SteeringControlRequest == 2){
+        frame->data[1] = 2;
        
         int tsa = steer_control.SC_TargetSteeringAngle + 600;
 
@@ -133,18 +145,7 @@ void ControlSender::SteeringControlToCanFrameData(
         //GET tss high 8 bits
         frame->data[3] |= (tss >> 1);
     }
-    else if(steer_control.SC_SteeringControlRequest == 2){
-        frame->data[1] = 2;
-        
-        int tt = steer_control.SC_TargetTorque * 100;
-        //GET tt low 8 bits
-        frame->data[4] |= tt;
-        //GET tt high 2 bits
-        frame->data[5] |= (tt >> 8);
-        //set targettorque sign
-        frame->data[5] |= (steer_control.SC_TargetTorqueSign << 2);
 
-    }
     else{
         std::cout << "Request error" << std::endl;
         return; 
@@ -266,7 +267,6 @@ void ControlSender::SerialReceive(const localization::gps::ConstPtr& msg){
     ROS_INFO("I heard NSV2 [%s]",msg->NSV2.c_str());
     ROS_INFO("I heard Status [%s]",msg->Status.c_str());
     ROS_INFO("I heard FPD_Cs [%s]",msg->FPD_Cs.c_str());
-    ROS_INFO("I heard FPD_CrLf [%s]",msg->FPD_CrLf.c_str());
 
 
     ROS_INFO("I heard IMU_Header [%s]",msg->IMU_Header.c_str());
@@ -280,7 +280,6 @@ void ControlSender::SerialReceive(const localization::gps::ConstPtr& msg){
     ROS_INFO("I heard AccZ [%s]",msg->AccZ.c_str());
     ROS_INFO("I heard Tpr [%s]",msg->Tpr.c_str());
     ROS_INFO("I heard IMU_Cs [%s]",msg->IMU_Cs.c_str());
-    ROS_INFO("I heard IMU_CrLf [%s]",msg->IMU_CrLf.c_str());
 }
 
 

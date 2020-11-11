@@ -15,7 +15,6 @@ string NSV1
 string NSV2
 string Status
 string FPD_Cs
-string FPD_CrLf
 
 string IMU_Header
 string IMU_GPSWeek
@@ -28,5 +27,4 @@ string AccY
 string AccZ
 string Tpr
 string IMU_Cs
-string IMU_CrLf
 

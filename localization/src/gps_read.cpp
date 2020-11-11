@@ -15,7 +15,6 @@
 
 #include <vector>
 #include <ros/ros.h>
-#include "localization/gps.h"
 
 
 //void signal_callback_handler(int signum);
@@ -86,91 +85,88 @@ bool GpsReader::StartReadGps(){
     //serial_port = gps_read.serial_port;
 
     cout << "this thread number is " << this_thread::get_id()<< endl;
-    char buffer[1024];
-    //TODO:
-    //how to handle exception to close the serial  
-    //signal(SIGINT, signal_callback_handler);
 
-    memset(buffer,0, sizeof(buffer));
-
+    string GPS_STR_;
+    int flagGP = 0;
+    int flagGT = 0;
     while(ros::ok()){
         const auto start_t = chrono::system_clock::now();
-        int n = read(serial_port, &buffer, sizeof(buffer));
-
-        if ( n < 0) {
-            perror("read serial");
-            return false;
-        }
-
-        GPS_STR_.assign(buffer);
-        auto begin = GPS_STR_.find('$');
-        auto end = GPS_STR_.find('\n');
-        int flagGP = 0;
-        int flagGT = 0;
-
-        while((flagGP == 0 || flagGT == 0) && begin != -1 && end != -1){
-            string FrameData = GPS_STR_.substr(begin , end - begin);
-            string temp;
-            vector<string> INFO;
-            for(auto c : FrameData){
-                if(c == ','){
+        char buffer[1024];
+        memset(buffer,0, sizeof(buffer));
+        if(read(serial_port, &buffer, sizeof(buffer)) > 0){
+            GPS_STR_.assign(buffer);
+            auto begin = find(GPS_STR_.begin(),GPS_STR_.end(),'$');
+            auto end = find(begin,GPS_STR_.end(),'\n');
+            while((flagGP == 0 || flagGT == 0) && begin != GPS_STR_.end() && end != GPS_STR_.end()){
+                string FrameData(begin,end);
+                if(CheckSum(FrameData)){
+                    string temp;
+                    vector<string> INFO;
+                    for(auto c : FrameData){
+                        if(c == ','){
+                            INFO.push_back(temp);
+                            temp.clear();
+                            continue;
+                        }
+                        temp += c;
+                    }
                     INFO.push_back(temp);
-                    temp.clear();
-                    continue;
-                }
-                temp += c;
-            }
-            rw_mutex_.lock();
+                    rw_mutex_.lock();
 
-            if(GPS_STR_[begin+2] == 'P'){
-                flagGP = 1;
-                int n = 0;
-                gps_report_.FPD_Header = INFO[n++];
-                gps_report_.FPD_GPSWeek = INFO[n++];
-                gps_report_.FPD_GPSTime = INFO[n++];
-                gps_report_.Heading = INFO[n++];
-                gps_report_.Pitch = INFO[n++];
-                gps_report_.Roll = INFO[n++];
-                gps_report_.Lattitude = INFO[n++];
-                gps_report_.Longitude = INFO[n++];
-                gps_report_.Altitude = INFO[n++];
-                gps_report_.Ve = INFO[n++];
-                gps_report_.Vn = INFO[n++];
-                gps_report_.Vu = INFO[n++];
-                gps_report_.Baseline = INFO[n++];
-                gps_report_.NSV1 = INFO[n++];
-                gps_report_.NSV2 = INFO[n++];
-                gps_report_.Status = INFO[n][1];
-                //TODO
-                //FPD_CS
-                //gps_report_.Status = INFO[n][1];
-                //FPR_CRLF
-                //gps_report_.Status = INFO[n][1];
+                    if(*(begin+2) == 'P'){
+                        flagGP = 1;
+                        int n = 0;
+                        gps_report_.FPD_Header = INFO[n++];
+                        gps_report_.FPD_GPSWeek = INFO[n++];
+                        gps_report_.FPD_GPSTime = INFO[n++];
+                        gps_report_.Heading = INFO[n++];
+                        gps_report_.Pitch = INFO[n++];
+                        gps_report_.Roll = INFO[n++];
+                        gps_report_.Lattitude = INFO[n++];
+                        gps_report_.Longitude = INFO[n++];
+                        gps_report_.Altitude = INFO[n++];
+                        gps_report_.Ve = INFO[n++];
+                        gps_report_.Vn = INFO[n++];
+                        gps_report_.Vu = INFO[n++];
+                        gps_report_.Baseline = INFO[n++];
+                        gps_report_.NSV1 = INFO[n++];
+                        gps_report_.NSV2 = INFO[n++];
+                        gps_report_.Status = INFO[n][1];
+                        gps_report_.FPD_Cs += INFO[n][3] ;
+                        gps_report_.FPD_Cs += INFO[n][4] ;
+
+                    }
+                    else if(*(begin + 2) == 'T'){
+                        flagGT = 1;
+                        int n = 0;
+                        imu_report_.IMU_Header = INFO[n++]; 
+                        imu_report_.IMU_GPSWeek = INFO[n++]; 
+                        imu_report_.IMU_GPSTime = INFO[n++]; 
+                        imu_report_.GyroX = INFO[n++]; 
+                        imu_report_.GyroY = INFO[n++]; 
+                        imu_report_.GyroZ = INFO[n++]; 
+                        imu_report_.AccX = INFO[n++]; 
+                        imu_report_.AccY = INFO[n++]; 
+                        imu_report_.AccZ = INFO[n++]; 
+                        imu_report_.Tpr = INFO[n].substr(0,4); 
+                        imu_report_.IMU_Cs += INFO[n][5];
+                        imu_report_.IMU_Cs += INFO[n][6];
+
+                    }
+                    rw_mutex_.unlock();
+                }
+                GPS_STR_.erase(GPS_STR_.begin(),end + 1);
+                begin = find(GPS_STR_.begin(),GPS_STR_.end(),'$');
+                end = find(begin,GPS_STR_.end(),'\n');
             }
-            else{
-                flagGT = 1;
-                int n = 0;
-                imu_report_.IMU_Header = INFO[n++]; 
-                imu_report_.IMU_GPSWeek = INFO[n++]; 
-                imu_report_.IMU_GPSTime = INFO[n++]; 
-                imu_report_.GyroX = INFO[n++]; 
-                imu_report_.GyroY = INFO[n++]; 
-                imu_report_.GyroZ = INFO[n++]; 
-                imu_report_.AccX = INFO[n++]; 
-                imu_report_.AccY = INFO[n++]; 
-                imu_report_.AccZ = INFO[n++]; 
-                imu_report_.Tpr = INFO[n++]; 
-                //TODO
-                /*
-                imu_report_.IMU_Cs
-                imu_report_.IMU_CrLf
-                */
-            }
-            rw_mutex_.unlock();
-            GPS_STR_.erase(begin, end - begin + 1);
-            auto begin = GPS_STR_.find('$');
-            auto end = GPS_STR_.find('\n');
+            flagGP = 0;
+            flagGT = 0;
         }
+        else if ( n < 0) {
+            perror("read serial");
+        }
+
+
 
         const auto end_t = chrono::system_clock::now();
         const auto elapsed_t = chrono::duration<double>(end_t - start_t);
@@ -232,7 +228,6 @@ void GpsReader::PublishToRos(){
         msg.NSV2 = gps_report_.NSV2;
         msg.Status = gps_report_.Status;
         msg.FPD_Cs = gps_report_.FPD_Cs;
-        msg.FPD_CrLf = gps_report_.FPD_CrLf;
         
         //imu info
         msg.IMU_Header = imu_report_.IMU_Header;
@@ -246,7 +241,7 @@ void GpsReader::PublishToRos(){
         msg.AccZ = imu_report_.AccZ;
         msg.Tpr = imu_report_.Tpr;
         msg.IMU_Cs = imu_report_.IMU_Cs;
-        msg.IMU_CrLf = imu_report_.IMU_CrLf;
+
 
         pub_to_GPSINFO.publish(msg);
 
@@ -257,56 +252,26 @@ void GpsReader::PublishToRos(){
     }
 }
 
-
-
-//TODO:
-//check this if right
-/*
-int GpsReader::FPD_Data_Check(char a[],int length)//GPS数据校验
-{
-    using namespace std;
-    int head_n=6;
-    string head_str; //帧头
-    string CS_str; //数据帧校验位
-    int flag=1; //数据标志位
-    int CS_dex; 
-    unsigned char CS=0;
-    int chang=0;
-    for(int i=0; i<length-2;i++)
-    {
-        if(i<head_n)
-        {
-            head_str += a[i];
+bool GpsReader::CheckSum(const std::string& frame){
+    if(frame.empty()) return false;
+    bool flag = 0;
+    unsigned char check1 = frame[1];
+    string check2 ;
+    for(int i = 2; i < frame.size(); ++i){
+        if(frame[i] == '*'){
+            flag = true;
         }
-        if(flag==3)
-        {
-            CS_str+=a[i];//在一帧数据中本来存在的校验位
+        if(flag){
+            check2 += frame[i + 1];
+            check2 += frame[i + 2];
+            break;
         }
-        if(a[i]=='*')
-        {
-            flag=3;
-        }
-        if(flag==2)
-        {
-            CS^=a[i];//异或出来的校验位
-            chang++;
-        }
-        if(a[i]=='$')
-        {
-            flag=2;
+        else{
+            check1 ^= frame[i];
         }
     }
-    CS_dex=CS;  //十进制ASCLL码
-    if((head_str=="$GPFPD")&&(GPS_Data_Check(CS_str,CS_dex)))
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return GPS_Data_Check(check2,check1);
 }
-/*
 int GpsReader::GPS_Data_Check(string hex_n,int dex)
 {
     string dex_con_hex;
@@ -371,5 +336,3 @@ int GpsReader::GPS_Data_Check(string hex_n,int dex)
         
     }
 }
-
-*/

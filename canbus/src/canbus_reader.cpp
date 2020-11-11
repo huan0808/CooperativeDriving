@@ -17,8 +17,10 @@
 #include <string>
 #include <iostream>
 #include <mutex>
-#include "canbus/frame.h"
 #include <thread>
+
+#include "canbus/frame.h"
+
 #define HSEVHU_SR_ID 0x50A // 100Hz
 #define HSEVCO_CR_ID 0x58C // 100Hz
 #define HSEVCO_CBW_ID 0x5C0 // 50Hz
@@ -41,21 +43,29 @@ CanBusReader::CanBusReader() {
 			std::cout << "Fail to open file:" << name_buffer << std::endl;
 		}
 		if (log_file_ != nullptr) {
-			fprintf(log_file_,
-					"time,"
-					"steering_angle,"
-					"steering_speed,"
-					"hand_torque,"
-					"workmode,"
-					"hand_torque_limit,"
+			fprintf(log_file_, "%s %s %s %s %s %s %s %s %s %s %s %s \r\n",
+					"time",
+					"steering_angle",
+					"steering_speed",
+					"hand_torque",
+					"workmode",
+					"hand_torque_limit",
 					"accel_pedal_position",
 					"front_steering_angle",
 					"speed",
 					"lon_accel",
 					"lat_accel",
-					"yaw_rate"
-					"\r\n");
+					"yaw_rate");
 			fflush(log_file_);
+		}
+	}
+}
+
+CanBusReader::~CanBusReader() {
+	if (ENABLE_CANBUS_LOG) {
+		if (log_file_ != nullptr) {
+		fclose(log_file_);
+		log_file_ = nullptr;
 		}
 	}
 }
@@ -388,8 +398,6 @@ void CanBusReader::PublishToRos(){
 	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
 	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",1000);
 	canbus::frame msg;
-//TODO(huan): 这里有一个问题是，无法确保在往外发消息的时候，chassis_report和steering_report已经接收到过有效的信息了
-//所以有可能会往外发-99.99和-99这样的数据。考虑加一个标志位，仅当已经接收到过chassis_report和steering_report后再往外发送
 	while(ros::ok()){
 		// make sure the messages have been read from canbus before being sent out
 		if (!HSEVHU_SR_read_ || !HSEVCO_VI_read_ || !HSEVCO_SI2_read_) {
@@ -431,7 +439,7 @@ void CanBusReader::PublishToRos(){
 		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
 		if (ENABLE_CANBUS_LOG && log_file_ != nullptr) {
 			fprintf(log_file_,
-			        "%.6f, %.6f, %.6f, %.6f, %d, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f,\r\n",
+			        "%.6f %.6f %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f \r\n",
 					now_in_seconds, steering_report_.SR_CurrentSteeringAngle, steering_report_.SR_CurrentSteeringSpeed,
 					hand_torque, steering_report_.SR_WorkMode, steering_report_.SR_HandTorqueLimit,
 					chassis_report_.VI_AccelPedalPosition, chassis_report_.VI_FrontSteeringAngle,
@@ -455,7 +463,7 @@ void CanBusReader::StartRead(){
     }
 	while (ros::ok()) {
         const auto start_t = chrono::system_clock::now();
-//TODO(huan): 这个线程能不能也用ros::Rate来控制频率呢？请确认。
+		//TODO(huan): 这个线程能不能也用ros::Rate来控制频率呢？请确认。
 		if (!ReadCanBus()) {
 			cout << "Read canbus failed!" << endl;
 		}

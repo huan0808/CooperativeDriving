@@ -402,6 +402,7 @@ void CanBusReader::PublishToRos(){
 		// make sure the messages have been read from canbus before being sent out
 		if (!HSEVHU_SR_read_ || !HSEVCO_VI_read_ || !HSEVCO_SI2_read_) {
 			std::cout << "Messages haven't been read, skip sending " << std::endl;
+			continue;
 		}
 		rw_mutex_.lock();
 		//chassis_report_

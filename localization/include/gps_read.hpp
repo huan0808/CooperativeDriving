@@ -3,12 +3,14 @@
 #include <mutex>
 #include <thread>
 #include "ros/ros.h"
+#include "string"
 #include "localization/gps.h"
 #define SERIAL_T 0.05
 #define SEND_HZ 100
 #define READ_T 0.01
 
 class GpsReader{
+
 public:
     GpsReader() = default;
     ~GpsReader() = default;
@@ -19,7 +21,7 @@ public:
     int serial_port;
 private:
     int FPD_Data_Check(char a[],int length);
-    int GPS_Data_Check(string hex_n,int dex);
+    int GPS_Data_Check(std::string &hex_n,int dex);
     bool CheckSum(const std::string& frame);
     std::string GPS_STR_;
     std::mutex rw_mutex_;

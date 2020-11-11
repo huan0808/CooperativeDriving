@@ -93,7 +93,8 @@ bool GpsReader::StartReadGps(){
         const auto start_t = chrono::system_clock::now();
         char buffer[1024];
         memset(buffer,0, sizeof(buffer));
-        if(read(serial_port, &buffer, sizeof(buffer)) > 0){
+        int n;
+        if((n = read(serial_port, &buffer, sizeof(buffer)) )> 0){
             GPS_STR_.assign(buffer);
             auto begin = find(GPS_STR_.begin(),GPS_STR_.end(),'$');
             auto end = find(begin,GPS_STR_.end(),'\n');
@@ -253,6 +254,7 @@ void GpsReader::PublishToRos(){
 }
 
 bool GpsReader::CheckSum(const std::string& frame){
+    using namespace std;
     if(frame.empty()) return false;
     bool flag = 0;
     unsigned char check1 = frame[1];
@@ -272,8 +274,9 @@ bool GpsReader::CheckSum(const std::string& frame){
     }
     return GPS_Data_Check(check2,check1);
 }
-int GpsReader::GPS_Data_Check(string hex_n,int dex)
+int GpsReader::GPS_Data_Check(std::string& hex_n,int dex)
 {
+    using namespace std;
     string dex_con_hex;
     string temp;
     int j=0;

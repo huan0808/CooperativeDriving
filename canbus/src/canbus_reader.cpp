@@ -428,6 +428,7 @@ void CanBusReader::PublishToRos(){
 		} else {
 			hand_torque = -1.0 * steering_report_.SR_HandTorque;
 		}
+		msg.SR_HandTorqueSign = steering_report_.SR_HandTorqueSign;
 		msg.SR_HandTorque = hand_torque;
 		msg.SR_WorkMode = steering_report_.SR_WorkMode;
 		msg.SR_HandTorqueLimit = steering_report_.SR_HandTorqueLimit;

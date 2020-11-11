@@ -39,7 +39,10 @@ include_directories(
 add_executable(_canbus src/canbus_main.cpp src/canbus_reader.cpp)
 target_link_libraries (_canbus ${catkin_LIBRARIES} Threads::Threads)
 
+add_dependencies(_canbus canbus_generate_messages_cpp
+#canbus_reader.cpp
 
+)
 
 #if(THREADS_HAVE_PTHREAD_ARG)
 #    target_compile_options(_canbus PUBLIC ${catkin_LIBRARIES} "-pthread")

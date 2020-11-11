@@ -36,7 +36,10 @@ include_directories(
 add_executable(_localization src/localization_main.cpp src/gps_read.cpp)
 target_link_libraries (_localization ${catkin_LIBRARIES} Threads::Threads)
 
+add_dependencies(_localization ${catkin_EXPORTED_TARGETS} localization_generate_messages_cpp
+# gps_read.cpp 
 
+)
 
 #if(THREADS_HAVE_PTHREAD_ARG)
 #    target_compile_options(_localization PUBLIC ${catkin_LIBRARIES} "-pthread")

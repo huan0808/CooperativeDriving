@@ -12,7 +12,7 @@
 class GpsReader{
 
 public:
-    GpsReader() = default;
+    GpsReader();
     ~GpsReader() = default;
     bool InitSerial();
     bool StartReadGps();
@@ -29,4 +29,5 @@ private:
     GpsReport gps_report_;
     ros::NodeHandle n_;
     ros::Rate loop_rate_ = SEND_HZ;
+    FILE* log_file_ = nullptr;
 };

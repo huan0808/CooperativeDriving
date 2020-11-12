@@ -28,7 +28,7 @@
 #define HSEVCO_SI1_ID 0x68B // 100Hz
 #define HSEVCO_VI_ID 0x68F // 100Hz
 #define HSEVCO_WSI_ID 0x68D // 100Hz
-#define ENABLE_CANBUS_LOG 0
+#define ENABLE_CANBUS_LOG 1
 
 CanBusReader::CanBusReader() {
 	if (ENABLE_CANBUS_LOG) {

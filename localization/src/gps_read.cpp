@@ -15,9 +15,41 @@
 
 #include <vector>
 #include <ros/ros.h>
-
+#define ENABLE_SERIAL_LOG 1
 
 //void signal_callback_handler(int signum);
+
+GpsReader::GpsReader() {
+	if (ENABLE_SERIAL_LOG) {
+		time_t rawtime;
+		char name_buffer[80];
+		std::time(&rawtime);
+		std::tm time_tm;
+		localtime_r(&rawtime, &time_tm);
+		strftime(name_buffer, 80, "/tmp/gps_log__%F_%H%M%S.csv", &time_tm);
+		log_file_ = fopen(name_buffer, "w");
+		if (log_file_ == nullptr) {
+			std::cout << "Fail to open file:" << name_buffer << std::endl;
+		}
+		if (log_file_ != nullptr) {
+			fprintf(log_file_, "%s  %s %s %s %s %s %s %s %s %s %s %s \r\n",
+					"time",
+                    "Pitch",
+					"Roll",
+					"Lattitude",
+					"Longitude",
+					"Altitude",
+					"GyroX",
+					"GyroY",
+					"GyroZ",
+					"AccX",
+					"AccY",
+					"AccZ");
+			fflush(log_file_);
+		}
+	}
+}
+
 
 bool GpsReader::InitSerial(){
     using namespace std;
@@ -245,7 +277,17 @@ void GpsReader::PublishToRos(){
 
 
         pub_to_GPSINFO.publish(msg);
-
+		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
+		if (ENABLE_SERIAL_LOG && log_file_ != nullptr) {
+			fprintf(log_file_,
+			        "%.6f %s %s %s %s %s %s %s %s %s %s %s \r\n",
+					now_in_seconds, gps_report_.Pitch.c_str(), gps_report_.Roll.c_str(),
+					gps_report_.Lattitude.c_str(), gps_report_.Longitude.c_str(), gps_report_.Altitude.c_str(),
+					imu_report_.GyroX.c_str(), imu_report_.GyroY.c_str(),
+					imu_report_.GyroZ.c_str(), imu_report_.AccX.c_str(),
+					imu_report_.AccY.c_str(), imu_report_.AccZ.c_str());
+		}
         //unlock
         rw_mutex_.unlock();
         loop_rate_.sleep();

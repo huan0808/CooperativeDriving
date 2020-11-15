@@ -6,15 +6,15 @@
 #include "control_by_wire.hpp"
 #include "steering_control.hpp"
 #include <mutex>
-
+#include "vehicle_info.hpp" 
 #define RECEIVE_HZ 50
-#define CONTROL_T 0.02 // in seconds
+#define WRITE_HZ 50 
 
 
 class ControlSender {
 // This class communicates with canbus and send control command.
 public:
-    ControlSender() = default;
+    ControlSender();
     ~ControlSender() = default;
     //send to CANBUS
     bool InitSocket();
@@ -27,7 +27,7 @@ public:
     void CANReceive(const canbus::frame::ConstPtr& msg);
     void SerialReceive(const localization::gps::ConstPtr& msg);
     void StartReceive();
-
+    void SendResetFrame();
 private:
     int s_ = 0;
 
@@ -44,5 +44,6 @@ private:
     ros::Subscriber subCan_;
     ros::Subscriber subSerial_;
     std::mutex rw_lock_;
-
+    VehicleInfo vehicle_info_;
+    FILE* log_file_;
 };

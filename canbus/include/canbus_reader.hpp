@@ -8,9 +8,8 @@
 #include "ros/ros.h"
 #include <mutex>
 
-#define CANBUS_T 0.01 // in seconds
-#define SEND_HZ 100   // in seconds TODO(huan)：统一定义成Hz吧，频率可能要调高点
-
+#define SEND_HZ 50   
+#define READ_HZ 400
 class CanBusReader {
 public:
     CanBusReader();
@@ -36,9 +35,12 @@ private:
     SteeringReport steering_report_;
     ChassisReport chassis_report_;
     std::mutex rw_mutex_;
-    ros::Rate loop_rate_ = SEND_HZ;
+ 
     FILE* log_file_ = nullptr;
     bool HSEVHU_SR_read_ = false;
     bool HSEVCO_VI_read_ = false;
     bool HSEVCO_SI2_read_ = false;
+    //int flag1 = 0;
+	//int flag2 = 0;
+    //int flag3 = 0;
 };

@@ -27,4 +27,5 @@ string AccY
 string AccZ
 string Tpr
 string IMU_Cs
-
+float64 x 
+float64 y

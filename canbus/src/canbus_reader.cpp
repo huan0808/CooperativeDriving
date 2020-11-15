@@ -21,7 +21,7 @@
 
 #include "canbus/frame.h"
 
-#define HSEVHU_SR_ID 0x50A // 100Hz
+#define HSEVHU_SR_ID 0x50A // 100Hz 
 #define HSEVCO_CR_ID 0x58C // 100Hz
 #define HSEVCO_CBW_ID 0x5C0 // 50Hz
 #define HSEVCO_SI2_ID 0x68A // 100Hz
@@ -37,7 +37,7 @@ CanBusReader::CanBusReader() {
 		std::time(&rawtime);
 		std::tm time_tm;
 		localtime_r(&rawtime, &time_tm);
-		strftime(name_buffer, 80, "/tmp/canbus_log__%F_%H%M%S.csv", &time_tm);
+		strftime(name_buffer, 80, "/home/nvidia/tmp/canbus_log__%F_%H%M%S.csv", &time_tm);
 		log_file_ = fopen(name_buffer, "w");
 		if (log_file_ == nullptr) {
 			std::cout << "Fail to open file:" << name_buffer << std::endl;
@@ -77,7 +77,6 @@ bool CanBusReader::InitSocket() {
 		perror("Socket error");
 		return false;
 	}
-	// cout << "Receiver's linux file descriptor is " << s << endl;
     // Copy C string to ifr (network device)
 	// Standard ioctls of network device 
     ifreq ifr;
@@ -94,6 +93,18 @@ bool CanBusReader::InitSocket() {
 		return false;
 	}
 	s_ = s;
+
+	//CAN filter   
+	can_filter rfilter[2];
+
+	rfilter[0].can_id   = HSEVHU_SR_ID;//0x50A
+	rfilter[0].can_mask = 0xFFF;
+
+	rfilter[1].can_id   = HSEVCO_SI2_ID;//0x68A
+	rfilter[1].can_mask = 0b111111111010;
+
+	setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
+	
 	return true;
 }
 
@@ -102,26 +113,29 @@ bool CanBusReader::InitSocket() {
 // PublishToRos里发这个成员，这样可以避免在PublishToRos进行的赋值操作（不过问题不大）
 bool CanBusReader::ReadCanBus() {
 	using namespace std;
+	
+	
 	can_frame frame;
-
 	int nbytes = read(s_, &frame, sizeof(can_frame));
 	if (nbytes < 0) {
 		perror("Read error");
 		return false;
 	}
-
+/*
 	if(!DataCheck(frame)) {
 		cout << "This is an error frame" << endl;
 		return false;
 	}
+*/	
+    cout <<hex<< frame.can_id << endl;
 	rw_mutex_.lock();
 	switch(frame.can_id) {
 		case HSEVHU_SR_ID: {
-			cout << "Received HSEVHU_SR message." << endl;
+			//cout <<"HSEVHU_SR "  << endl;
+			//printf("%d\n", flag1++);	
 			// steering wheel angle
 			steering_report_.SR_CurrentSteeringAngle =
 			    ((((int)frame.data[2] << 8) + frame.data[1]) & ((1 << 14) - 1)) * 0.1 - 600.0;				
-			// cout << hex << CSA << endl;
 			// steering wheel speed
 			steering_report_.SR_CurrentSteeringSpeed =
 				(((int)frame.data[3] << 2) + (frame.data[2] >> 6)) & ((1 << 10) - 1);
@@ -142,13 +156,14 @@ bool CanBusReader::ReadCanBus() {
 			//liveCounter
 			steering_report_.SR_LiveCounter = (frame.data[7] >> 4) & ((1 << 4) - 1);
 			HSEVHU_SR_read_ = true;
-			PrintCanFrameDLC(frame);
-			PrintSteeringReport();
+			//PrintCanFrameDLC(frame);
+			//PrintSteeringReport();
 			break;
 		}
 		case HSEVCO_VI_ID: {
-			cout << "Received HSEVCO_VI message" << endl;
-			// TODO: do we need (int) or (double)?
+			//cout <<"HSEVCO_VI_ID " << endl;
+			//printf("%d\n", flag2++);
+			//cout << "Received HSEVCO_VI message" << endl;
 			// gear info
 			chassis_report_.VI_GearInfo = frame.data[0] & ((1 << 3) - 1);
 			// brake info
@@ -173,12 +188,16 @@ bool CanBusReader::ReadCanBus() {
 			chassis_report_.VI_VehicleSpeed = 
 				((((int)frame.data[7] << 8) + frame.data[6]) & ((1 << 16) - 1)) * 0.01;
 			HSEVCO_VI_read_ = true;
-			PrintCanFrameDLC(frame);
-			PrintVehicleInfo();
+			//PrintCanFrameDLC(frame);
+			//PrintVehicleInfo();
+			
 			break;
 		}
 		case HSEVCO_SI2_ID:{
-			cout << "Received HSEVCO_SI2 message" << endl;
+		
+			//cout <<"HSEVHU_SR " << endl;
+			//printf("%d\n", flag3++);	
+			//cout << "Received HSEVCO_SI2 message" << endl;
 			// lon accel
 			chassis_report_.SI2_LongitudinalAccel =
 				((((int)frame.data[1] << 8) + frame.data[0]) & ((1 << 12) - 1)) * 0.01 - 20;
@@ -189,13 +208,14 @@ bool CanBusReader::ReadCanBus() {
 			chassis_report_.SI2_YawRate =
 				((((int)frame.data[4] << 8) + frame.data[3]) & ((1 << 12) - 1)) * 0.05 - 100;
 			HSEVCO_SI2_read_ = true;
-			PrintCanFrameDLC(frame);
-			PrintSInfo2();
+			//PrintCanFrameDLC(frame);
+			//PrintSInfo2();
 			break;
 		}
 	}
+	rw_mutex_.unlock();//lock pass
 
-	rw_mutex_.unlock();
+	
 	return true;
 }
 
@@ -395,13 +415,15 @@ bool CanBusReader::DataCheck(const can_frame& frame){
 }
 
 void CanBusReader::PublishToRos(){
+	ros::Rate loop_rate_ (SEND_HZ);
 	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
 	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",1000);
 	canbus::frame msg;
 	while(ros::ok()){
 		// make sure the messages have been read from canbus before being sent out
-		if (!HSEVHU_SR_read_ || !HSEVCO_VI_read_ || !HSEVCO_SI2_read_) {
+		if (!(HSEVHU_SR_read_ && HSEVCO_VI_read_ && HSEVCO_SI2_read_)) {
 			std::cout << "Messages haven't been read, skip sending " << std::endl;
+			usleep(20000);
 			continue;
 		}
 		rw_mutex_.lock();
@@ -457,6 +479,7 @@ void CanBusReader::PublishToRos(){
 void CanBusReader::StartRead(){
 	using namespace std;
 	std::cout << "start receive thread id is" << std::this_thread::get_id() << endl;
+	ros::Rate loop_rate(READ_HZ);
 	if (!InitSocket()) {
         cout << "Init socket failed" << endl;
         return ;
@@ -464,22 +487,14 @@ void CanBusReader::StartRead(){
         cout << "Init socket success" << endl;
     }
 	while (ros::ok()) {
-        const auto start_t = chrono::system_clock::now();
+        
 		//TODO(huan): 这个线程能不能也用ros::Rate来控制频率呢？请确认。
 		if (!ReadCanBus()) {
 			cout << "Read canbus failed!" << endl;
 		}
-        const auto end_t = chrono::system_clock::now();
-        const auto elapsed_t = chrono::duration<double>(end_t - start_t);
-        if (elapsed_t.count() < CANBUS_T) {
-            const auto remaining_t = chrono::duration<double>(CANBUS_T) - elapsed_t;
-            // cout << "Canbus thread sleeps for " << remaining_t.count() << " seconds." << endl;
-            this_thread::sleep_for(remaining_t);
-        } else {
-            cout << "Warning: canbus loop spent " << elapsed_t.count() << " seconds larger than " 
-                 << CANBUS_T << " seconds. " << endl;
-        }
+     		loop_rate.sleep();
     }
+    
 
     if (!CloseSocket()) {
         cout << "Close socket failed" << endl;

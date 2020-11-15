@@ -27,14 +27,15 @@ GpsReader::GpsReader() {
 		std::time(&rawtime);
 		std::tm time_tm;
 		localtime_r(&rawtime, &time_tm);
-		strftime(name_buffer, 80, "/home/nvidia/tmp/gps_log__%F_%H%M%S.csv", &time_tm);
+		strftime(name_buffer, 80, "/tmp/gps_log__%F_%H%M%S.csv", &time_tm);
 		log_file_ = fopen(name_buffer, "w");
 		if (log_file_ == nullptr) {
 			std::cout << "Fail to open file:" << name_buffer << std::endl;
 		}
 		if (log_file_ != nullptr) {
-			fprintf(log_file_, "%s %s %s %s\r\n",
+			fprintf(log_file_, "%s %s %s %s %s\r\n",
 					"time",
+                    "gpstime"
                     "theta",
 					"x",
 					"y");
@@ -95,7 +96,8 @@ bool GpsReader::InitSerial(){
     return true; // success
 }
 
-
+//TODO:
+//how to make sure we don't miss frames
 bool GpsReader::StartReadGps(){
     using namespace std;
     ros::Rate loop_rate(READ_HZ);
@@ -130,13 +132,12 @@ bool GpsReader::StartReadGps(){
     return true;
 }
 
+
+
+
+/*
 void GpsReader::StartReadGps_fake(){
-    using namespace std;
-    if(InitSerial() == 0 ){
-        return ;
-    }
-    
-    ros::Rate loop_rate_(SEND_HZ);
+    InitSerial();
     while(ros::ok()){
         char buffer[300];
         memset(buffer,0, sizeof(buffer));
@@ -147,20 +148,21 @@ void GpsReader::StartReadGps_fake(){
         else if ( n < 0) {
             perror("read serial");
         }
-        GetOneFrame();
-        long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
+        GetOneFrame_fake();
         if (ENABLE_SERIAL_LOG && log_file_ != nullptr) {
 			fprintf(log_file_,
 			        "%.6f %s %lf %lf \r\n",
 					now_in_seconds,gps_report_.Heading.c_str(), x_ , y_);
 		}
+
         loop_rate_.sleep();
 
     }
+
+    
+
 }
-
-
+*/
 
 
 /*
@@ -182,16 +184,17 @@ bool GpsReader::CloseSerial(){
 
 void GpsReader::PublishToRos(){
     using namespace std;
+    cout <<"aaa" <<endl;
     ros::Rate loop_rate(SEND_HZ);
+    cout <<"bbb" <<endl;
     ros::Publisher pub_to_GPSINFO = n_.advertise<localization::gps>("GPS_INFO",1000);
     while(ros::ok()){
+        //cout << "aaa" << endl;
         //lock
         rw_mutex_.lock();
         GetOneFrame();
-        if(!(imu_report_.IMU_RECEIVE && gps_report_.GPS_RECEIVE)){
-            usleep(20000);
-            continue;
-        }
+
+            cout <<"ccc" <<endl;
         localization::gps msg;
         
         //gps info
@@ -225,16 +228,19 @@ void GpsReader::PublishToRos(){
         msg.AccZ = imu_report_.AccZ;
         msg.Tpr = imu_report_.Tpr;
         msg.IMU_Cs = imu_report_.IMU_Cs;
-        msg.x = x_;
-        msg.y = y_;
+
 
         pub_to_GPSINFO.publish(msg);
 		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
+		cout << "GPSTime =  " << gps_report_.FPD_GPSTime << endl;
+		cout << "IMUTime =  " << imu_report_.IMU_GPSTime << endl;
+        cout << "GPS_STR size is " << GPS_STR_ << endl;
+
         if (ENABLE_SERIAL_LOG && log_file_ != nullptr) {
 			fprintf(log_file_,
-			        "%.6f %s %lf %lf \r\n",
-					now_in_seconds,gps_report_.Heading.c_str(), x_ , y_);
+			        "%.6f %s %s %lf %lf \r\n",
+					now_in_seconds,gps_report_.FPD_GPSTime.c_str(),gps_report_.Heading.c_str(), x_ , y_);
 		}
         //unlock
         rw_mutex_.unlock();
@@ -308,7 +314,7 @@ void GpsReader::GetOneFrame(){
                 gps_report_.Status = INFO[n][1];
                 gps_report_.FPD_Cs += INFO[n][3] ;
                 gps_report_.FPD_Cs += INFO[n][4] ;
-                gps_report_.GPS_RECEIVE = true;
+
             }
             else if(*(begin + 2) == 'T'){
                 flagGT = 1;
@@ -325,7 +331,7 @@ void GpsReader::GetOneFrame(){
                 imu_report_.Tpr = INFO[n].substr(0,4); 
                 imu_report_.IMU_Cs += INFO[n][5];
                 imu_report_.IMU_Cs += INFO[n][6];
-                imu_report_.IMU_RECEIVE = true;
+
             }
             double L = stod(gps_report_.Lattitude);
             double B = stod(gps_report_.Longitude);

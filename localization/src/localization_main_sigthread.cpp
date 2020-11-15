@@ -7,12 +7,7 @@ int main(int argc ,char **argv){
     cout << " ========= Starting Localization Module =========== " << endl;
     ros::init(argc,argv,"Gps");
     GpsReader gps_read;
-
-    thread read_t(&GpsReader::StartReadGps, &gps_read);
-    thread pub_t(&GpsReader::PublishToRos, &gps_read);
-
-    read_t.join();
-    pub_t.join();
+    gps_read.StartReadGps_fake();
 
     return 0;
 }

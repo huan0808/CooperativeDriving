@@ -17,6 +17,7 @@
 
 #include <thread>
 
+#include "lat_controller.hpp"
 
 #define HSEVHU_SC_ID 0x501
 #define HSEVCO_CBW_ID 0x5C0
@@ -154,8 +155,7 @@ void ControlSender::SteeringControlToCanFrameData(
         //set targettorque sign
         frame->data[5] |= (steer_control.SC_TargetTorqueSign << 2);
 
-    }    
-    else if(steer_control.SC_SteeringControlRequest == 2){
+    }  else if(steer_control.SC_SteeringControlRequest == 2){
         frame->data[1] = 2;
        
         int tsa = steer_control.SC_TargetSteeringAngle + 600;
@@ -172,9 +172,7 @@ void ControlSender::SteeringControlToCanFrameData(
         frame->data[2] |= ((tss & 1) << 7);
         //GET tss high 8 bits
         frame->data[3] |= (tss >> 1);
-    }
-
-    else{
+    } else {
         std::cout << "Request error" << std::endl;
         return; 
     }
@@ -253,18 +251,22 @@ bool ControlSender::StartWrite(){
     }
     SendResetFrame();
 
+    LatController lat_controller;
     while (ros::ok) {
-
         rw_lock_.lock();
         if(!vehicle_info_.isReceive){
             ROS_INFO("hasn't receive vehicle info");
             usleep(20000);
             continue;
         }
-        const double steering_angle_command = -10.0;
-       //ControlSteerAngle(steering_angle_command);
+        double steer_torque_command = 0.0;
+        steer_torque_command = lat_controller.ComputeSteerTorque(
+            vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
+        ControlSteerTorque(steer_torque_command);
+        // const double steering_angle_command = -10.0;
+        //ControlSteerAngle(steering_angle_command);
         const double accel_command = 0.1;
-       // ControlAccel(accel_command);
+        // ControlAccel(accel_command);
         rw_lock_.unlock();
         loop_rate.sleep();
     } 

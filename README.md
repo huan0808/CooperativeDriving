@@ -3,12 +3,12 @@
 
 将本项目的三个模块 canbus，localization,control复制到 ros的catkin_ws/src文件夹下
 
-在ros的catkin_ws目录下运行
+编译：
+在ros的catkin_ws目录下运行进行编译
 ```
 catkin_make
-roscore
-
 ```
+运行：
 打开新的终端运行启动文件
 ```
 roslaunch canbus main.launch

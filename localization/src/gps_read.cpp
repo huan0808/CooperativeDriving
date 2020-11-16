@@ -189,11 +189,12 @@ void GpsReader::PublishToRos(){
         rw_mutex_.lock();
         GetOneFrame();
         if(!(imu_report_.IMU_RECEIVE && gps_report_.GPS_RECEIVE)){
+            rw_mutex_.unlock();
             usleep(20000);
             continue;
         }
         localization::gps msg;
-        
+        ROS_INFO("localization ok");
         //gps info
         msg.FPD_Header = gps_report_.FPD_Header;
         msg.FPD_GPSWeek = gps_report_.FPD_GPSWeek;
@@ -327,11 +328,12 @@ void GpsReader::GetOneFrame(){
                 imu_report_.IMU_Cs += INFO[n][6];
                 imu_report_.IMU_RECEIVE = true;
             }
-            double L = stod(gps_report_.Lattitude);
-            double B = stod(gps_report_.Longitude);
-            x_ = getGPFPD_Pos_x0(L, B);
-            y_ = getGPFPD_Pos_y0(L, B);
-            
+ 	        if(gps_report_.GPS_RECEIVE == true){
+		        double L = stod(gps_report_.Lattitude);
+		        double B = stod(gps_report_.Longitude);
+		        x_ = getGPFPD_Pos_x0(L, B);
+		        y_ = getGPFPD_Pos_y0(L, B);	    
+            }
         }
         GPS_STR_.erase(GPS_STR_.begin(),end + 1);
         begin = find(GPS_STR_.begin(),GPS_STR_.end(),'$');

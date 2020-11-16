@@ -127,12 +127,11 @@ bool CanBusReader::ReadCanBus() {
 		return false;
 	}
 */	
-    cout <<hex<< frame.can_id << endl;
+    //cout <<hex<< frame.can_id << endl;
 	rw_mutex_.lock();
 	switch(frame.can_id) {
 		case HSEVHU_SR_ID: {
 			//cout <<"HSEVHU_SR "  << endl;
-			//printf("%d\n", flag1++);	
 			// steering wheel angle
 			steering_report_.SR_CurrentSteeringAngle =
 			    ((((int)frame.data[2] << 8) + frame.data[1]) & ((1 << 14) - 1)) * 0.1 - 600.0;				
@@ -162,7 +161,6 @@ bool CanBusReader::ReadCanBus() {
 		}
 		case HSEVCO_VI_ID: {
 			//cout <<"HSEVCO_VI_ID " << endl;
-			//printf("%d\n", flag2++);
 			//cout << "Received HSEVCO_VI message" << endl;
 			// gear info
 			chassis_report_.VI_GearInfo = frame.data[0] & ((1 << 3) - 1);
@@ -196,7 +194,6 @@ bool CanBusReader::ReadCanBus() {
 		case HSEVCO_SI2_ID:{
 		
 			//cout <<"HSEVHU_SR " << endl;
-			//printf("%d\n", flag3++);	
 			//cout << "Received HSEVCO_SI2 message" << endl;
 			// lon accel
 			chassis_report_.SI2_LongitudinalAccel =
@@ -305,6 +302,7 @@ void CanBusReader::PrintSteeringReport() {
 	// live counter
 	cout << "LiveCounter: " << steering_report_.SR_LiveCounter << endl;
 }
+
 void CanBusReader::PrintVehicleInfo() {
 	using namespace std;
 
@@ -407,7 +405,6 @@ void CanBusReader::PrintSInfo2() {
 
 bool CanBusReader::DataCheck(const can_frame& frame){
 	uint8_t CheckSum = frame.data[0];
-
 	for(int i = 1; i < frame.can_dlc; ++i) {
 		CheckSum ^= frame.data[i];
 	}
@@ -487,8 +484,6 @@ void CanBusReader::StartRead(){
         cout << "Init socket success" << endl;
     }
 	while (ros::ok()) {
-        
-		//TODO(huan): 这个线程能不能也用ros::Rate来控制频率呢？请确认。
 		if (!ReadCanBus()) {
 			cout << "Read canbus failed!" << endl;
 		}

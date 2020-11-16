@@ -2,8 +2,6 @@
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 
-
-
 class MsgReceive
 {
 public:

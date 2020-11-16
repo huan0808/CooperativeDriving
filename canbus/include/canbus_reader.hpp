@@ -18,6 +18,7 @@ public:
     //int ReadCanBus(SteeringReport* steering_report, ChassisReport* const chassis_report);
     bool CloseSocket();
     void PublishToRos();
+  
     //void PublishToRos(const SteeringReport* const steering_report ,const ChassisReport* const chassis_report);
     void StartRead();
 private:
@@ -40,7 +41,4 @@ private:
     bool HSEVHU_SR_read_ = false;
     bool HSEVCO_VI_read_ = false;
     bool HSEVCO_SI2_read_ = false;
-    //int flag1 = 0;
-	//int flag2 = 0;
-    //int flag3 = 0;
 };

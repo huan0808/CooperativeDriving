@@ -17,7 +17,6 @@
 
 #include <thread>
 
-#include "lat_controller.hpp"
 
 #define HSEVHU_SC_ID 0x501
 #define HSEVCO_CBW_ID 0x5C0
@@ -101,8 +100,6 @@ void ControlSender::ControlSteerTorque(const double steering_wheel_torque) {
 void ControlSender::ControlAccel(const double accel_command) {
     ControlByWire control_by_wire;
 
-    // TODO(huan): any upper and lower limit?
-    //upper limit may be this car's physical limit
     control_by_wire.CBW_AX_Request = accel_command; 
 
     control_by_wire.CBW_AccelerationRequestSt = 1;
@@ -155,7 +152,8 @@ void ControlSender::SteeringControlToCanFrameData(
         //set targettorque sign
         frame->data[5] |= (steer_control.SC_TargetTorqueSign << 2);
 
-    }  else if(steer_control.SC_SteeringControlRequest == 2){
+    }    
+    else if(steer_control.SC_SteeringControlRequest == 2){
         frame->data[1] = 2;
        
         int tsa = steer_control.SC_TargetSteeringAngle + 600;
@@ -172,7 +170,9 @@ void ControlSender::SteeringControlToCanFrameData(
         frame->data[2] |= ((tss & 1) << 7);
         //GET tss high 8 bits
         frame->data[3] |= (tss >> 1);
-    } else {
+    }
+
+    else{
         std::cout << "Request error" << std::endl;
         return; 
     }
@@ -193,31 +193,32 @@ void ControlSender::SteeringControlToCanFrameData(
 void ControlSender::ControlByWireToCanFrameData(
     const ControlByWire& control_by_wire, can_frame* const frame) {
     int ax = (control_by_wire.CBW_AX_Request + 20) * 100;
-    /*
-        light control
+    
+    //light control
+    /*        
         frame->data[1] =0xD0;
         frame->data[2] =0x47;
         frame->data[6]  =0x20;
     */
-    /*
-        acc control
-        frame->data[0] = 0x36;
-        frame->data[1] =0xDA;
-        frame->data[2] =0x57;
-        frame->data[3] = 0x58;
-    */
+    //acc control
+    //frame->data[0] = 0x36;
+    // frame->data[1] =0xDA;
+    // frame->data[2] =0x57;
+    // frame->data[5] = 0x40;
+    
     frame->data[1] |= ax;
     frame->data[2] |= (ax >> 8);
     frame->data[2] |= (control_by_wire.CBW_AccelerationRequestSt << 4);
     frame->data[2] |= (control_by_wire.CBW_FunctionRequestSt << 6); 
-
+    frame->data[5] = 0x40; 
+   
     //DataCheck
-/*
-    for(int i = 1; i < 8; i++)
-    {
-        frame->data[0] ^= frame->data[i];
-    }
-*/
+    /*
+        for(int i = 1; i < 8; i++)
+        {
+            frame->data[0] ^= frame->data[i];
+        }
+    */
 }
 
 void ControlSender::SendResetFrame(){
@@ -227,7 +228,9 @@ void ControlSender::SendResetFrame(){
 
 	frame.can_id = HSEVCO_CBW_ID;
 	frame.can_dlc = 8;
-	//frame.data[1] =0xDA;
+	frame.data[1] =0xDA;
+	frame.data[2] =0x07;
+
     //frame.data[2] =0x07;
     /*
     frame.data[3] = 0;
@@ -251,22 +254,20 @@ bool ControlSender::StartWrite(){
     }
     SendResetFrame();
 
-    LatController lat_controller;
     while (ros::ok) {
         rw_lock_.lock();
-        if(!vehicle_info_.isReceive){
+        if(!(vehicle_info_.FLAG_SERIAL && vehicle_info_.FLAG_CAN)){ 
             ROS_INFO("hasn't receive vehicle info");
+            rw_lock_.unlock();
             usleep(20000);
             continue;
         }
-        double steer_torque_command = 0.0;
-        steer_torque_command = lat_controller.ComputeSteerTorque(
-            vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
-        ControlSteerTorque(steer_torque_command);
-        // const double steering_angle_command = -10.0;
+        const double steering_angle_command = -100.0;
         //ControlSteerAngle(steering_angle_command);
         const double accel_command = 0.1;
-        // ControlAccel(accel_command);
+        //ControlAccel(accel_command);
+        const double torque_command = 3;
+        //ControlSteerTorque(torque_command);
         rw_lock_.unlock();
         loop_rate.sleep();
     } 
@@ -283,45 +284,49 @@ bool ControlSender::StartWrite(){
 
 //receive from ros
 void ControlSender::CANReceive(const canbus::frame::ConstPtr& msg){
-    
-    vehicle_info_.speed = msg->SR_CurrentSteeringSpeed;
+   
+    //std::cout << "0" << std::endl;
+    vehicle_info_.speed = msg->VI_VehicleSpeed;
     vehicle_info_.steer_angle = msg->SR_CurrentSteeringAngle;
     vehicle_info_.front_steering_angle = msg->VI_FrontSteeringAngle;
-    
+    vehicle_info_.FLAG_CAN = 1;
+  
 }
 
 void ControlSender::SerialReceive(const localization::gps::ConstPtr& msg){
-  
+   
+    //std::cout << "1" <<std::endl;
     vehicle_info_.x = msg->x;
     vehicle_info_.y = msg->y;
     vehicle_info_.theta = stod(msg->Heading);
-    
+    vehicle_info_.FLAG_SERIAL = 1;
+  
 }
 
-
 void ControlSender::StartReceive(){
-    //int frame = 0;
-    subCan_ = n_.subscribe("CAN_INFO",1000,&ControlSender::CANReceive,this);
+    subCan_=n_.subscribe("CAN_INFO",1000,&ControlSender::CANReceive,this);
     subSerial_ = n_.subscribe("GPS_INFO",1000,&ControlSender::SerialReceive,this);
+    ros::Rate loop_rate(RECEIVE_HZ);
     while(ros::ok())
     {
         rw_lock_.lock();
         //frame++;
         //ROS_INFO("this is %d frame",frame);
         ros::spinOnce();
-        long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
-
-        if(ENABLE_LOG && log_file_ != nullptr){
-            fprintf(log_file_,"%.6f %.2f %.2f %.2f %.2f %.2f %.2f\r\n",
+	    if(vehicle_info_.FLAG_CAN && vehicle_info_.FLAG_SERIAL){
+        	long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		    double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
+            if(ENABLE_LOG && log_file_ != nullptr){
+                fprintf(log_file_,"%.6f %.2f %.2f %.2f %.2f %.2f %.2f\r\n",
                 now_in_seconds, vehicle_info_.x,vehicle_info_.y,
                 vehicle_info_.theta,vehicle_info_.speed,
                 vehicle_info_.steer_angle,
-                vehicle_info_.front_steering_angle
-            );
+                vehicle_info_.front_steering_angle);
+            }
         }
         rw_lock_.unlock();
         loop_rate_.sleep();
     }
 }
+
 

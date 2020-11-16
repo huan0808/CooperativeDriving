@@ -9,6 +9,7 @@
 #include "vehicle_info.hpp" 
 #define RECEIVE_HZ 50
 #define WRITE_HZ 50 
+#define CONTROL_T 0.02
 
 
 class ControlSender {
@@ -28,6 +29,7 @@ public:
     void SerialReceive(const localization::gps::ConstPtr& msg);
     void StartReceive();
     void SendResetFrame();
+    void log();
 private:
     int s_ = 0;
 

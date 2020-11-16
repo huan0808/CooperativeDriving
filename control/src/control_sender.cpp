@@ -266,8 +266,12 @@ bool ControlSender::StartWrite(){
         //ControlSteerAngle(steering_angle_command);
         const double accel_command = 0.1;
         //ControlAccel(accel_command);
-        const double torque_command = 3;
+        steer_torque_command = lat_controller.ComputeSteerTorque(
+            vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
+        ControlSteerTorque(steer_torque_command);
+        //const double torque_command = 3;
         //ControlSteerTorque(torque_command);
+        
         rw_lock_.unlock();
         loop_rate.sleep();
     } 

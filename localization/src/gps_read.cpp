@@ -35,9 +35,9 @@ GpsReader::GpsReader() {
 		if (log_file_ != nullptr) {
 			fprintf(log_file_, "%s %s %s %s\r\n",
 					"time",
-                    "theta",
-					"x",
-					"y");
+                                        "theta",
+					"Longitude",
+					"Lattitude");
 			fflush(log_file_);
 		}
 	}
@@ -152,8 +152,8 @@ void GpsReader::StartReadGps_fake(){
 		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
         if (ENABLE_SERIAL_LOG && log_file_ != nullptr) {
 			fprintf(log_file_,
-			        "%.6f %s %lf %lf \r\n",
-					now_in_seconds,gps_report_.Heading.c_str(), x_ , y_);
+			        "%.6f %s %s %s \r\n",
+					now_in_seconds,gps_report_.Heading.c_str(),gps_report_.Longitude.c_str() , gps_report_.Lattitude.c_str());
 		}
         loop_rate_.sleep();
 
@@ -233,10 +233,10 @@ void GpsReader::PublishToRos(){
 		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
         if (ENABLE_SERIAL_LOG && log_file_ != nullptr) {
-			fprintf(log_file_,
-			        "%.6f %s %lf %lf \r\n",
-					now_in_seconds,gps_report_.Heading.c_str(), x_ , y_);
-		}
+		fprintf(log_file_,
+			"%.6f %s %s %s \r\n",
+		        now_in_seconds,gps_report_.Heading.c_str(),gps_report_.Longitude.c_str() , gps_report_.Lattitude.c_str());
+	}
         //unlock
         rw_mutex_.unlock();
         loop_rate.sleep();
@@ -266,14 +266,19 @@ bool GpsReader::CheckSum(const std::string& frame){
     return GPS_Data_Check(check2,check1);
 }
 
+//get one frame of GPFPD and GTIMU
 void GpsReader::GetOneFrame(){
     using namespace std;
+    
+    //both GPFPD and GTIMU start with '$' and end with '\n',we need get a frame contain  GPFPD and GTIMU
+   
     auto begin = find(GPS_STR_.begin(),GPS_STR_.end(),'$');
     auto end = find(begin,GPS_STR_.end(),'\n');
     int flagGP = 0;
     int flagGT = 0;
+    //if we get both GPFPD and GTIMU or there is no enough info in buff (GPS_STR_) we break the loop
     while((flagGP == 0 || flagGT == 0) && begin != GPS_STR_.end() && end != GPS_STR_.end()){
-        string FrameData(begin,end);
+        string FrameData(begin,end); //FrameData is one GPFPD or GTIMU message
         //cout << FrameData << endl;
         if(CheckSum(FrameData)){
             string temp;
@@ -287,7 +292,7 @@ void GpsReader::GetOneFrame(){
                 temp += c;
             }
             INFO.push_back(temp);
-
+	    
             if(*(begin+2) == 'P'){
                 flagGP = 1;
                 int n = 0;
@@ -329,13 +334,13 @@ void GpsReader::GetOneFrame(){
                 imu_report_.IMU_RECEIVE = true;
             }
  	        if(gps_report_.GPS_RECEIVE == true){
-		        double B = stod(gps_report_.Lattitude);
-		        double L = stod(gps_report_.Longitude);
+		        double B = stod(gps_report_.Lattitude);  //纬度
+		        double L = stod(gps_report_.Longitude);  //经度
 		        x_ = getGPFPD_Pos_x0(L, B);
 		        y_ = getGPFPD_Pos_y0(L, B);	    
             }
         }
-        GPS_STR_.erase(GPS_STR_.begin(),end + 1);
+        GPS_STR_.erase(GPS_STR_.begin(),end + 1); //delete info we have used in buff
         begin = find(GPS_STR_.begin(),GPS_STR_.end(),'$');
         end = find(begin,GPS_STR_.end(),'\n');
     }

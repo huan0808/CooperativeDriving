@@ -35,7 +35,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(_control src/control_main.cpp src/control_sender.cpp)
+add_executable(_control src/control_main.cpp src/control_sender.cpp src/lat_controller.cpp src/math_utils.cpp)
 target_link_libraries(_control ${catkin_LIBRARIES} Threads::Threads)
 
 

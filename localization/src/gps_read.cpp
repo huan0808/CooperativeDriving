@@ -329,8 +329,8 @@ void GpsReader::GetOneFrame(){
                 imu_report_.IMU_RECEIVE = true;
             }
  	        if(gps_report_.GPS_RECEIVE == true){
-		        double L = stod(gps_report_.Lattitude);
-		        double B = stod(gps_report_.Longitude);
+		        double B = stod(gps_report_.Lattitude);
+		        double L = stod(gps_report_.Longitude);
 		        x_ = getGPFPD_Pos_x0(L, B);
 		        y_ = getGPFPD_Pos_y0(L, B);	    
             }

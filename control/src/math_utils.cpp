@@ -1,5 +1,5 @@
 #include <math.h>
-
+#include "math_utils.hpp"
 double WrapAngle(const double angle) {
     const double new_angle = std::fmod(angle, M_PI * 2.0);
     return new_angle < 0 ? new_angle + M_PI * 2.0 : new_angle;

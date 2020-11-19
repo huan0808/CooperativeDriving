@@ -253,7 +253,7 @@ bool ControlSender::StartWrite(){
         cout << "Init socket success" << endl;
     }
     SendResetFrame();
-
+    LatController lat_controller;
     while (ros::ok) {
         rw_lock_.lock();
         if(!(vehicle_info_.FLAG_SERIAL && vehicle_info_.FLAG_CAN)){ 

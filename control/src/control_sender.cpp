@@ -253,10 +253,11 @@ bool ControlSender::StartWrite(){
     } else {
         cout << "Init socket success" << endl;
     }
-    SendResetFrame();
+    
     LatController lat_controller;
     LonController lon_controller;
     lon_controller.SetCruiseSpeed(15.0); // set cruise speed [km/h]
+    SendResetFrame();
     while (ros::ok) {
         rw_lock_.lock();
         if(!(vehicle_info_.FLAG_SERIAL && vehicle_info_.FLAG_CAN)){ 

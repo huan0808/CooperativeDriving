@@ -16,7 +16,7 @@
 #include <string>
 
 #include <thread>
-
+#include "lat_controller.hpp"
 
 #define HSEVHU_SC_ID 0x501
 #define HSEVCO_CBW_ID 0x5C0
@@ -266,7 +266,7 @@ bool ControlSender::StartWrite(){
         //ControlSteerAngle(steering_angle_command);
         const double accel_command = 0.1;
         //ControlAccel(accel_command);
-        steer_torque_command = lat_controller.ComputeSteerTorque(
+         const double steer_torque_command = lat_controller.ComputeSteerTorque(
             vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
         ControlSteerTorque(steer_torque_command);
         //const double torque_command = 3;

@@ -129,8 +129,8 @@ double LatController::ComputeSteerTorque(double x, double y, double theta, doubl
     // compute the steering torque command
     // steering_torque = -k_torque * steering_angle_error
     // transform current steering angle to radians
-    const double curr_steer_angle = curr_steer_angle / 180.0 * M_PI;
-    const double steer_angle_error = steer_angle_desired - curr_steer_angle;
+    const double steer_angle = curr_steer_angle / 180.0 * M_PI;
+    const double steer_angle_error = steer_angle_desired - steer_angle;
     // torque in 2-5 NM
     const double k_torque = 50.0;
     double steer_torque_command = -k_torque * steer_angle_error;

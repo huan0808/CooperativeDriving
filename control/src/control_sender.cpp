@@ -17,6 +17,7 @@
 
 #include <thread>
 #include "lat_controller.hpp"
+#include "lon_controller.hpp"
 
 #define HSEVHU_SC_ID 0x501
 #define HSEVCO_CBW_ID 0x5C0
@@ -254,6 +255,8 @@ bool ControlSender::StartWrite(){
     }
     SendResetFrame();
     LatController lat_controller;
+    LonController lon_controller;
+    lon_controller.SetCruiseSpeed(15.0); // set cruise speed [km/h]
     while (ros::ok) {
         rw_lock_.lock();
         if(!(vehicle_info_.FLAG_SERIAL && vehicle_info_.FLAG_CAN)){ 
@@ -264,9 +267,9 @@ bool ControlSender::StartWrite(){
         }
         const double steering_angle_command = -100.0;
         //ControlSteerAngle(steering_angle_command);
-        const double accel_command = 0.1;
-        //ControlAccel(accel_command);
-         const double steer_torque_command = lat_controller.ComputeSteerTorque(
+        const double accel_command = lon_controller.ComputeAccel(vehicle_info_.speed/3.6, CONTROL_T);
+        ControlAccel(accel_command);
+        const double steer_torque_command = lat_controller.ComputeSteerTorque(
             vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
         ControlSteerTorque(steer_torque_command);
         //const double torque_command = 3;
@@ -274,7 +277,7 @@ bool ControlSender::StartWrite(){
         
         rw_lock_.unlock();
         loop_rate.sleep();
-    } 
+    }
 
     if (!CloseSocket()) {
         cout << "Close socket failed" << endl;

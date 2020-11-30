@@ -17,9 +17,9 @@ public:
     double ComputeSteerTorque(double x, double y, double theta, double curr_steer_angle);
     double ComputeSteerAngle(double x, double y, double theta, double curr_steer_angle);
     bool has_path() { return has_path_;}
-    int path_point_index_ = 0;
-    double lateral_error = 0;
-    double heading_error = 0; 
+    int path_point_index_ = -99;
+    double lateral_error = -99.0;
+    double heading_error = -99.0; 
 private:
 
     int sequence_ = 0;

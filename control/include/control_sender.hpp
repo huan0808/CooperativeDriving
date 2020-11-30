@@ -48,4 +48,8 @@ private:
     std::mutex rw_lock_;
     VehicleInfo vehicle_info_;
     FILE* log_file_;
+    int path_point_index_log_;
+    double lat_log_ = -99.0;
+    double head_log_ = -99.0;
+    int index_ = -99;
 };

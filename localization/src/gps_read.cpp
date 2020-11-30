@@ -35,7 +35,7 @@ GpsReader::GpsReader() {
 		if (log_file_ != nullptr) {
 			fprintf(log_file_, "%s %s %s %s\r\n",
 					"time",
-                                        "theta",
+                    "theta",
 					"Longitude",
 					"Lattitude");
 			fflush(log_file_);
@@ -229,6 +229,9 @@ void GpsReader::PublishToRos(){
         msg.x = x_;
         msg.y = y_;
 
+        ROS_INFO("x is %lf",x_);
+        ROS_INFO("y is %lf",y_);
+        
         pub_to_GPSINFO.publish(msg);
 		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);

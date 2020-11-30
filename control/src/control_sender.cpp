@@ -37,14 +37,17 @@ ControlSender::ControlSender(){
 			std::cout << "Fail to open file:" << name_buffer << std::endl;
 		}
 		if (log_file_ != nullptr) {
-			fprintf(log_file_, "%s %s %s %s %s %s %s\r\n",
+			fprintf(log_file_, "%s %s %s %s %s %s %s %s %s %s\r\n",
 					"time",
 					"x",
 					"y",
                     "theta",
                     "speed",
                     "steer_angle",
-                    "front_steering_angle");
+                    "front_steering_angle",
+                    "index",
+                    "lateral_error",
+                    "heading_error");
 			fflush(log_file_);
 		}
 	}
@@ -253,7 +256,7 @@ bool ControlSender::StartWrite(){
     } else {
         cout << "Init socket success" << endl;
     }
-    
+       
     LatController lat_controller;
     LonController lon_controller;
     lon_controller.SetCruiseSpeed(15.0); // set cruise speed [km/h]
@@ -266,16 +269,36 @@ bool ControlSender::StartWrite(){
             usleep(20000);
             continue;
         }
-        const double steering_angle_command = -100.0;
-        //ControlSteerAngle(steering_angle_command);
+        //send a fixed angle 
+        /* 
+            const double steering_angle_command = -100.0;
+            ControlSteerAngle(steering_angle_command);
+        */
+
+        //send a fixed torque 
+        /*
+            const double torque_command = 3;
+            ControlSteerTorque(torque_command);
+        */
+
+        //lon_controller
         const double accel_command = lon_controller.ComputeAccel(vehicle_info_.speed/3.6, CONTROL_T);
         ControlAccel(accel_command);
-        const double steer_torque_command = lat_controller.ComputeSteerTorque(
+        //lat_controller use torque
+        /*
+            const double steer_torque_command = lat_controller.ComputeSteerTorque(
             vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
-        ControlSteerTorque(steer_torque_command);
-        //const double torque_command = 3;
-        //ControlSteerTorque(torque_command);
-        
+            ControlSteerTorque(steer_torque_command);
+        */
+        //lat_controller use angle
+        const double steer_angle_command = lat_controller.ComputeSteerAngle(
+            vehicle_info_.x, vehicle_info_.y, vehicle_info_.theta, vehicle_info_.steer_angle);
+        ROS_INFO("current steerangle is %lf",steer_angle_command);
+        ControlSteerAngle(-1 * steer_angle_command);
+        index_ = lat_controller.path_point_index_;
+        lat_log_ = lat_controller.lateral_error;
+        head_log_ = lat_controller.heading_error;
+
         rw_lock_.unlock();
         loop_rate.sleep();
     }
@@ -325,11 +348,15 @@ void ControlSender::StartReceive(){
         	long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		    double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
             if(ENABLE_LOG && log_file_ != nullptr){
-                fprintf(log_file_,"%.6f %.2f %.2f %.2f %.2f %.2f %.2f\r\n",
+                fprintf(log_file_,"%.6f %.2f %.2f %.2f %.2f %.2f %.2f %d %.2f %.2f\r\n",
                 now_in_seconds, vehicle_info_.x,vehicle_info_.y,
-                vehicle_info_.theta,vehicle_info_.speed,
+                vehicle_info_.theta,
+                vehicle_info_.speed,
                 vehicle_info_.steer_angle,
-                vehicle_info_.front_steering_angle);
+                vehicle_info_.front_steering_angle,
+                index_,
+                lat_log_,
+                head_log_);
             }
         }
         rw_lock_.unlock();

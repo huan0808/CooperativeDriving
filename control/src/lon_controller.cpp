@@ -19,8 +19,7 @@ double LonController::ComputeAccel(double curr_speed, double ts) {
   // make target speed start from zero and approach cruise speed at a constant
   // growth rate
   const double target_speed_accel = 0.5;  // m/s^2
-  target_speed_ =
-      std::min(sequence_++ * ts * target_speed_accel, cruise_speed_ / 3.6);
+  target_speed_ = std::min(sequence_++ * ts * target_speed_accel, cruise_speed_ / 3.6);
 
   const double speed_error = target_speed_ - curr_speed;
   const double accel_cmd = pid_controller_.Control(speed_error, ts);

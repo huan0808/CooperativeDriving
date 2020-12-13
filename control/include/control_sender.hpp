@@ -7,6 +7,7 @@
 #include "steering_control.hpp"
 #include <mutex>
 #include "vehicle_info.hpp" 
+
 #define RECEIVE_HZ 50
 #define WRITE_HZ 50 
 #define CONTROL_T 0.02
@@ -51,5 +52,7 @@ private:
     int path_point_index_log_;
     double lat_log_ = -99.0;
     double head_log_ = -99.0;
+    double torque = -99.0;
+    double ref_heading = -99.0;
     int index_ = -99;
 };

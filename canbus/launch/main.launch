@@ -1,6 +1,0 @@
-<launch>
-    <node pkg="canbus" type="_canbus" name = "can" output = "screen"/>
-    <node pkg="localization" type="_localization" name = "Gps" output = "screen"/>
-    <node pkg="control" type="_control" name = "control" output = "screen"/>
-</launch>
-

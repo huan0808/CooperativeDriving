@@ -1,0 +1,7 @@
+<launch>
+  <!--include file="$(find usb_cam)/launch/usb_cam.launch" /-->
+  <include file="$(find canbus)/launch/canbus.launch" />
+  <include file="$(find localization)/launch/localization.launch" />
+  <include file="$(find control)/launch/control.launch" />
+</launch>
+

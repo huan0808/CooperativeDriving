@@ -28,6 +28,7 @@ private:
     double getGPFPD_Pos_y0(double L, double B);
     std::string GPS_STR_;
     std::mutex rw_mutex_;
+    std::string gps_port_;
     ImuReport imu_report_;
     GpsReport gps_report_;
     ros::NodeHandle n_;
@@ -35,4 +36,5 @@ private:
     double rad(double d);  //角度转弧度
     double x_ = -99.0;
     double y_ = -99.0;
+    
 };

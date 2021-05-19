@@ -31,6 +31,7 @@
 #define ENABLE_CANBUS_LOG 1
 
 CanBusReader::CanBusReader() {
+	n_.param("can_port_num",can_port_,std::string("can0"));
 	if (ENABLE_CANBUS_LOG) {
 		time_t rawtime;
 		char name_buffer[80];
@@ -80,7 +81,7 @@ bool CanBusReader::InitSocket() {
     // Copy C string to ifr (network device)
 	// Standard ioctls of network device 
     ifreq ifr;
-	strcpy(ifr.ifr_name, "can0");
+	strcpy(ifr.ifr_name, can_port_.c_str());
 	//system call manipulates the underlying device parameters of special files             
 	ioctl(s, SIOCGIFINDEX, &ifr);
 	sockaddr_can addr;

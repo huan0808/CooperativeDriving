@@ -21,6 +21,8 @@
 //void signal_callback_handler(int signum);
 
 GpsReader::GpsReader() {
+    node_.param("serial_port_name", gps_port_,
+                std::string("/dev/ttyACM0"));   
 	if (ENABLE_SERIAL_LOG) {
 		time_t rawtime;
 		char name_buffer[80];
@@ -46,15 +48,15 @@ GpsReader::GpsReader() {
 
 bool GpsReader::InitSerial(){
     using namespace std;
-    serial_port = open("/dev/ttyACM0", O_RDWR);
-    if(serial_port == -1){
+    serial_port_ = open(gps_port_.c_str(), O_RDWR);
+    if(serial_port_ == -1){
         cout << "open serial failure" << endl;
         return false;
     }
     termios tty;
 
     // get serial port setting default
-    if(tcgetattr(serial_port, &tty) != 0) {
+    if(tcgetattr(serial_port_, &tty) != 0) {
         cout << "tcgetattr error" << endl;
         return false;
     }
@@ -87,7 +89,7 @@ bool GpsReader::InitSerial(){
     cfsetospeed(&tty, B115200);
     
     // Save tty settings, also checking for error
-    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+    if (tcsetattr(serial_port_, TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
         return 0;
     }
@@ -106,7 +108,7 @@ bool GpsReader::StartReadGps(){
         cout <<  "serial init success" << endl;
     }
     FILE * file = fopen("/home/nvidia/tmp/buffoutput.csv","w");
-    //serial_port = gps_read.serial_port;
+    //serial_port_ = gps_read.serial_port_;
 
     cout << "this thread number is " << this_thread::get_id()<< endl;
     while(ros::ok()){
@@ -115,7 +117,7 @@ bool GpsReader::StartReadGps(){
         memset(buffer,0, sizeof(buffer));
         int n;
         //rw_mutex_.lock();
-        if((n = read(serial_port, &buffer, sizeof(buffer)) )> 1000){
+        if((n = read(serial_port_, &buffer, sizeof(buffer)) )> 1000){
             //printf
             GPS_STR_.assign(buffer);
 	    fprintf(file,"%s",buffer);	
@@ -150,7 +152,7 @@ void GpsReader::StartReadGps_fake(){
         char buffer[1024];
         memset(buffer,0, sizeof(buffer));
         int n;
-        if((n = read(serial_port, &buffer, sizeof(buffer)) ) > 0){
+        if((n = read(serial_port_, &buffer, sizeof(buffer)) ) > 0){
             GPS_STR_.assign(buffer);
             fprintf(file,"%s",buffer);	
         }
@@ -222,14 +224,14 @@ void GpsReader::StartReadGps_fake(){
 /*
 void signal_callback_handler(int signum) {
    std::cout << "Caught signal " << signum << std::endl;
-   close(serial_port);
+   close(serial_port_);
    // Terminate program
    exit(signum);
 }
 */
 
 bool GpsReader::CloseSerial(){
-    if(close(serial_port) == -1){
+    if(close(serial_port_) == -1){
         std::cout << "close error" << std::endl;
         return false;
     }

@@ -1,4 +1,5 @@
 <launch>
     <node pkg="localization" type="_localization" name = "Gps" output = "screen"/>
+        <param name="serial_port_name" value="/dev/ttyACM0" />
 </launch>
 

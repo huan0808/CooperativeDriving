@@ -23,6 +23,7 @@ public:
     void StartRead();
 private:
     int s_ = 0;
+    std::string can_port_;
     void PrintCanFrameDLC(const can_frame& frame);
     //void PrintSteeringReport(const SteeringReport& steering_report);
     void PrintSteeringReport();

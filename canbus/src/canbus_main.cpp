@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 
     
     CanBusReader canbus_reader;
-
+    
     //create a thread read from CANBUS
     std::thread read_t(&CanBusReader::StartRead,&canbus_reader);
     //create a thread publish to CAN_INFO node

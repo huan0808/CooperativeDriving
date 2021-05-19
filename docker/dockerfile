@@ -1,0 +1,27 @@
+# Build command
+# docker build -f dockerfile .
+
+FROM nvidia/cuda:10.0-devel-ubuntu18.04
+
+COPY deps /root/deps
+
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/driveworks/lib/:/usr/local/caffe/lib
+ENV DEBIAN_FRONTEND noninteractive
+ENV CUDA_ARCH_BIN "35 52 60 61 70"
+ENV CUDA_ARCH_PTX "52 60 61 70"
+
+RUN apt update || true
+
+RUN cd root/deps && apt-get install lsb-core -y && \
+    sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
+    curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC1CF6E31E6BADE8868B172B4F42ED6FBAB17C654' | apt-key add -
+
+RUN apt update || true
+
+RUN apt install ros-melodic-desktop-full -y && \
+    echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc && \
+    apt-get install unzip wget libleveldb-dev libsnappy-dev libatlas-base-dev liblmdb-dev -y && \
+    apt-get install libjpeg-turbo8-dev libjpeg8-dev libturbojpeg0-dev gedit vim emacs git -y && \
+    wget -O CMake-v3.17.2.tar.gz https://github.com/Kitware/CMake/archive/v3.17.2.tar.gz && \
+    tar -zxvf CMake-v3.17.2.tar.gz && cd CMake-3.17.2/ && ./bootstrap && make -j 32 && make install && hash -r && \
+    apt install python3-pip -y && apt-get clean && apt-get clean

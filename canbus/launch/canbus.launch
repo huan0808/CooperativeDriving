@@ -1,4 +1,5 @@
 <launch>
     <node pkg="localization" type="_localization" name = "Gps" output = "screen"/>
+        <param name="can_port_num" value="can0" />
 </launch>
 

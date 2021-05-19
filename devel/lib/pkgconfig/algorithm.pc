@@ -1,0 +1,8 @@
+prefix=/home/nvidia/catkin_ws/devel
+
+Name: algorithm
+Description: Description of algorithm
+Version: 0.0.0
+Cflags: -I/home/nvidia/catkin_ws/devel/include
+Libs: -L${prefix}/lib 
+Requires: roscpp rospy std_msgs

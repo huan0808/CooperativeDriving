@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="canbus" type="_canbus" name = "can" output = "screen"/>
+    <node pkg="localization" type="_localization" name = "Gps" output = "screen"/>
+    <node pkg="AdrcPidControl" type="_AdrcPidControl" name = "Adrc" output = "screen"/>
+</launch>
+

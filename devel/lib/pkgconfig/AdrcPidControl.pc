@@ -1,8 +1,0 @@
-prefix=/home/nvidia/catkin_ws/devel
-
-Name: AdrcPidControl
-Description: Description of AdrcPidControl
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: message_generation roscpp std_msgs message_runtime

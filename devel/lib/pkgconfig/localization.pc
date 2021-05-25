@@ -1,8 +1,0 @@
-prefix=/home/nvidia/catkin_ws/devel
-
-Name: localization
-Description: Description of localization
-Version: 0.0.0
-Cflags: -I/home/nvidia/catkin_ws/devel/include
-Libs: -L${prefix}/lib 
-Requires: message_generation roscpp std_msgs message_runtime

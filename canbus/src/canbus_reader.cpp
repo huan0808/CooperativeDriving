@@ -109,13 +109,9 @@ bool CanBusReader::InitSocket() {
 	return true;
 }
 
-//TODO(huan): 是不是可以抛弃掉steering_report和chassis_report这两个量
-// 直接定义一个类成员canbus::frame msg_，然后在ReadCanBus里写这个成员，在
-// PublishToRos里发这个成员，这样可以避免在PublishToRos进行的赋值操作（不过问题不大）
+
 bool CanBusReader::ReadCanBus() {
 	using namespace std;
-	
-	
 	can_frame frame;
 	int nbytes = read(s_, &frame, sizeof(can_frame));
 	if (nbytes < 0) {
@@ -226,7 +222,7 @@ bool CanBusReader::CloseSocket() {
 }
 
 void CanBusReader::PrintCanFrameDLC(const can_frame& frame) {
-	for (int i = 0; i < frame.can_dlc; ++i) {
+	for(int i = 0; i < frame.can_dlc; ++i) {
 		std::cout << std::hex << (int)frame.data[i] << " ";
 	}
 	std::cout << std::endl;
@@ -248,7 +244,7 @@ void CanBusReader::PrintSteeringReport() {
 	cout << "Hand torque limit " << steering_report_.SR_HandTorqueLimit << " Nm" << endl;
     // work mode
 	string work_mode;
-	switch (steering_report_.SR_WorkMode){
+	switch (steering_report_.SR_WorkMode) {
 		case 0:
 			work_mode = "Manual";
 			break;
@@ -268,7 +264,7 @@ void CanBusReader::PrintSteeringReport() {
 	cout << "Workmode: " << work_mode << endl;
     // error
 	string error;
-	switch (steering_report_.SR_Error){
+	switch (steering_report_.SR_Error) {
 		case 0:
 			error = "NoError";
 			break;
@@ -285,7 +281,7 @@ void CanBusReader::PrintSteeringReport() {
 	cout << "Error: " << error << endl;
 	// warning
 	string warning;
-	switch (steering_report_.SR_Warning){
+	switch (steering_report_.SR_Warning) {
 		case 0:
 			warning = "None";
 			break;
@@ -308,7 +304,7 @@ void CanBusReader::PrintVehicleInfo() {
 	using namespace std;
 
 	// gear info
-	switch (chassis_report_.VI_GearInfo){
+	switch (chassis_report_.VI_GearInfo) {
 		case 0:
 			cout << "Gear: P" << endl;
 			break;
@@ -326,7 +322,7 @@ void CanBusReader::PrintVehicleInfo() {
 			break;
 	}
 	// brake info
-	switch (chassis_report_.VI_BrakeInfo){
+	switch (chassis_report_.VI_BrakeInfo) {
 		case 0:
 			cout << "Brake: No Brake" << endl;
 			break;
@@ -338,7 +334,7 @@ void CanBusReader::PrintVehicleInfo() {
 			break;
 	}
 	// button 1
-	switch (chassis_report_.VI_Button1){
+	switch (chassis_report_.VI_Button1) {
 		case 0:
 			cout << "Button 1: No Press" << endl;
 			break;
@@ -350,7 +346,7 @@ void CanBusReader::PrintVehicleInfo() {
 			break;
 	}
 	// button 2
-	switch (chassis_report_.VI_Button2){
+	switch (chassis_report_.VI_Button2) {
 		case 0:
 			cout << "Button 2: No Press" << endl;
 			break;
@@ -362,7 +358,7 @@ void CanBusReader::PrintVehicleInfo() {
 			break;
 	}
     // handbrake
-	switch (chassis_report_.VI_HandBrakeSt){
+	switch (chassis_report_.VI_HandBrakeSt) {
 		case 0:
 			cout << "Hand Brake: No Brake" << endl;
 			break;
@@ -374,7 +370,7 @@ void CanBusReader::PrintVehicleInfo() {
 			break;
 	}
     // jerk st
-	switch (chassis_report_.VI_JerkSt){
+	switch (chassis_report_.VI_JerkSt) {
 		case 0:
 			cout << "JerkSt: No Press" << endl;
 			break;
@@ -401,10 +397,7 @@ void CanBusReader::PrintSInfo2() {
 	std::cout << "Yawrate is " << chassis_report_.SI2_YawRate << " deg/s " << std::endl;
 }
 
-
-
-
-bool CanBusReader::DataCheck(const can_frame& frame){
+bool CanBusReader::DataCheck(const can_frame& frame) {
 	uint8_t CheckSum = frame.data[0];
 	for(int i = 1; i < frame.can_dlc; ++i) {
 		CheckSum ^= frame.data[i];
@@ -412,12 +405,12 @@ bool CanBusReader::DataCheck(const can_frame& frame){
 	return CheckSum == 0;
 }
 
-void CanBusReader::PublishToRos(){
+void CanBusReader::PublishToRos() {
 	ros::Rate loop_rate_ (SEND_HZ);
 	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
 	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",1000);
 	canbus::frame msg;
-	while(ros::ok()){
+	while(ros::ok()) {
 		// make sure the messages have been read from canbus before being sent out
 		if (!(HSEVHU_SR_read_ && HSEVCO_VI_read_ && HSEVCO_SI2_read_)) {
 			std::cout << "Messages haven't been read, skip sending " << std::endl;
@@ -471,12 +464,11 @@ void CanBusReader::PublishToRos(){
 		rw_mutex_.unlock();
 		loop_rate_.sleep();
 	}
-
 }
 
-void CanBusReader::StartRead(){
+void CanBusReader::StartRead() {
 	using namespace std;
-	std::cout << "start receive thread id is" << std::this_thread::get_id() << endl;
+	std::cout << "start receive thread id is" << std::this_thread::get_id() << std::endl;
 	ros::Rate loop_rate(READ_HZ);
 	if (!InitSocket()) {
         cout << "Init socket failed" << endl;
@@ -490,8 +482,6 @@ void CanBusReader::StartRead(){
 		}
      		loop_rate.sleep();
     }
-    
-
     if (!CloseSocket()) {
         cout << "Close socket failed" << endl;
     } else {

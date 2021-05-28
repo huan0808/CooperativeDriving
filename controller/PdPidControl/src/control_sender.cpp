@@ -24,7 +24,7 @@
 #include "lon_controller.hpp"
 #include "math_utils.hpp"
 
-// can signal ??
+// can signal 
 #define HSEVHU_SC_ID 0x501
 #define HSEVCO_CBW_ID 0x5C0
 #define HANDTORQUE_LIMIT 5
@@ -222,8 +222,7 @@ void ControlSender::SteeringControlToCanFrameData(
     frame->data[6] |= (htl >> 2);
     
     //DataCheck
-    for(int i = 1; i < 8; i++)
-    {
+    for(int i = 1; i < 8; i++) {
         frame->data[0] ^= frame->data[i];
     }
 }
@@ -253,12 +252,11 @@ void ControlSender::ControlByWireToCanFrameData(
     frame->data[5] = 0x40; 
    
     //DataCheck
-    /*
-        for(int i = 1; i < 8; i++)
-        {
-            frame->data[0] ^= frame->data[i];
-        }
-    */
+    
+    for(int i = 1; i < 8; i++) {
+        frame->data[0] ^= frame->data[i];
+    }
+    
 }
 
 
@@ -336,13 +334,13 @@ bool ControlSender::StartWrite(){
         ROS_INFO("current steerangle is %lf",steer_angle_command);
         ControlSteerAngle(-1 * steer_angle_command);
         */
-		// unsafe ??
-		index_ = lat_controller.get_path_point_index(); // ??
+		// unsafe 
+		index_ = lat_controller.get_path_point_index(); 
         lat_log_ = lat_controller.get_lateral_error();
         head_log_ = lat_controller.get_heading_error();
-	    torque = lat_controller.get_torque(); // ??
-	    ref_heading = lat_controller.get_ref_heading(); // ??
-        rw_lock_.unlock(); // ??
+	    torque = lat_controller.get_torque(); 
+	    ref_heading = lat_controller.get_ref_heading(); 
+        rw_lock_.unlock(); 
         loop_rate.sleep();
     }
 

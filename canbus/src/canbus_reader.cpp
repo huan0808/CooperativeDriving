@@ -32,6 +32,8 @@
 
 CanBusReader::CanBusReader() {
 	n_.param("can_port_num",can_port_,std::string("can0"));
+	n_.param("enable_log",can_port_,std::string("can0"));
+	n_.param("can_port_num",can_port_,std::string("can0"));
 	if (ENABLE_CANBUS_LOG) {
 		time_t rawtime;
 		char name_buffer[80];

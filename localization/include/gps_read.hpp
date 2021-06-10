@@ -29,6 +29,8 @@ private:
     std::string GPS_STR_;
     std::mutex rw_mutex_;
     std::string gps_port_;
+    std::string enable_log_;
+    std::string trajectory_file_;
     ImuReport imu_report_;
     GpsReport gps_report_;
     ros::NodeHandle n_;
@@ -36,5 +38,5 @@ private:
     double rad(double d);  //角度转弧度
     double x_ = -99.0;
     double y_ = -99.0;
-    
+    int hz_;
 };

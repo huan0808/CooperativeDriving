@@ -28,10 +28,13 @@
 #define HSEVCO_SI1_ID 0x68B // 100Hz
 #define HSEVCO_VI_ID 0x68F // 100Hz
 #define HSEVCO_WSI_ID 0x68D // 100Hz
-#define ENABLE_CANBUS_LOG 1
+#define ENABLE_CANBUS_LOG 0
 
 CanBusReader::CanBusReader() {
 	n_.param("can_port_num",can_port_,std::string("can0"));
+	//n_.param("enable_log",can_port_,std::string("can0"));
+	//n_.param("can_port_num",can_port_,std::string("can0"));
+	
 	if (ENABLE_CANBUS_LOG) {
 		time_t rawtime;
 		char name_buffer[80];
@@ -109,25 +112,21 @@ bool CanBusReader::InitSocket() {
 	return true;
 }
 
-//TODO(huan): 是不是可以抛弃掉steering_report和chassis_report这两个量
-// 直接定义一个类成员canbus::frame msg_，然后在ReadCanBus里写这个成员，在
-// PublishToRos里发这个成员，这样可以避免在PublishToRos进行的赋值操作（不过问题不大）
+
 bool CanBusReader::ReadCanBus() {
 	using namespace std;
-	
-	
 	can_frame frame;
 	int nbytes = read(s_, &frame, sizeof(can_frame));
 	if (nbytes < 0) {
 		perror("Read error");
 		return false;
 	}
-/*
+
 	if(!DataCheck(frame)) {
 		cout << "This is an error frame" << endl;
 		return false;
 	}
-*/	
+
     //cout <<hex<< frame.can_id << endl;
 	rw_mutex_.lock();
 	switch(frame.can_id) {
@@ -225,186 +224,9 @@ bool CanBusReader::CloseSocket() {
 	return true;
 }
 
-void CanBusReader::PrintCanFrameDLC(const can_frame& frame) {
-	for (int i = 0; i < frame.can_dlc; ++i) {
-		std::cout << std::hex << (int)frame.data[i] << " ";
-	}
-	std::cout << std::endl;
-}
-
-void CanBusReader::PrintSteeringReport() {
-	using namespace std;
-
-	// steering wheel angle
-	cout << "Steering wheel angle: " << steering_report_.SR_CurrentSteeringAngle << " deg" << endl;
-	// steering wheel angle speed
-	cout << "Steering wheel angle speed: " << steering_report_.SR_CurrentSteeringSpeed << " deg/s" << endl;
-	// hand torque
-	cout << "Hand torque: " << steering_report_.SR_HandTorque << " Nm" << endl;
-    // hand torque sign
-	const string hand_torque_sign = steering_report_.SR_HandTorqueSign == 0 ? "left" : "right";
-	cout << "Hand torque sign: " << hand_torque_sign << endl;
-	// hand torque limit
-	cout << "Hand torque limit " << steering_report_.SR_HandTorqueLimit << " Nm" << endl;
-    // work mode
-	string work_mode;
-	switch (steering_report_.SR_WorkMode){
-		case 0:
-			work_mode = "Manual";
-			break;
-		case 1:
-			work_mode = "Angle";
-			break;
-		case 2:
-			work_mode = "Torque";
-			break;
-		case 7:
-			work_mode = "Error";
-			break;
-		default:
-			work_mode = "Unknown";
-			break;
-	}
-	cout << "Workmode: " << work_mode << endl;
-    // error
-	string error;
-	switch (steering_report_.SR_Error){
-		case 0:
-			error = "NoError";
-			break;
-		case 1:
-			error = "OverCurrent";
-			break;
-		case 2:
-			error = "LoseSAS";
-			break;
-		default:
-			error = "Unknown";
-			break;
-	}
-	cout << "Error: " << error << endl;
-	// warning
-	string warning;
-	switch (steering_report_.SR_Warning){
-		case 0:
-			warning = "None";
-			break;
-		case 1:
-			warning = "Left Limit";
-			break;
-		case 2:
-			warning = "Right Limit";
-			break;
-		default:
-			warning = "Unknown";
-			break;
-	}
-	cout << "Warning: " << warning << endl;
-	// live counter
-	cout << "LiveCounter: " << steering_report_.SR_LiveCounter << endl;
-}
-
-void CanBusReader::PrintVehicleInfo() {
-	using namespace std;
-
-	// gear info
-	switch (chassis_report_.VI_GearInfo){
-		case 0:
-			cout << "Gear: P" << endl;
-			break;
-		case 1:
-			cout << "Gear: R" << endl;
-			break;
-		case 2:
-			cout << "Gear: N" << endl;
-			break;
-		case 3:
-			cout << "Gear: D" << endl;
-			break;
-		default:
-			cout << "Gear: Unknown" << endl;
-			break;
-	}
-	// brake info
-	switch (chassis_report_.VI_BrakeInfo){
-		case 0:
-			cout << "Brake: No Brake" << endl;
-			break;
-		case 1:
-			cout << "Brake: Brake" << endl;
-			break;
-		default:
-			cout << "Brake: Unknown" << endl;
-			break;
-	}
-	// button 1
-	switch (chassis_report_.VI_Button1){
-		case 0:
-			cout << "Button 1: No Press" << endl;
-			break;
-		case 1:
-			cout << "Button 1: Pressed" << endl;
-			break;
-		default:
-			cout << "Button 1: Unknown" << endl;
-			break;
-	}
-	// button 2
-	switch (chassis_report_.VI_Button2){
-		case 0:
-			cout << "Button 2: No Press" << endl;
-			break;
-		case 1:
-			cout << "Button 2: Pressed" << endl;
-			break;
-		default:
-			cout << "Button 2: Unknown" << endl;
-			break;
-	}
-    // handbrake
-	switch (chassis_report_.VI_HandBrakeSt){
-		case 0:
-			cout << "Hand Brake: No Brake" << endl;
-			break;
-		case 1:
-			cout << "Hand Brake: Brake" << endl;
-			break;
-		default:
-			cout << "Hand Brake: Unknown" << endl;
-			break;
-	}
-    // jerk st
-	switch (chassis_report_.VI_JerkSt){
-		case 0:
-			cout << "JerkSt: No Press" << endl;
-			break;
-		case 1:
-			cout << "JerkSt: Pressed" << endl;
-			break;
-		default:
-			cout << "JerkSt: Unknown" << endl;
-			break;
-	}
-	// accel pedal position
-	cout << "Accel pedal position: " << chassis_report_.VI_AccelPedalPosition << " % " << endl;
-    // front steering angle
-	cout << "Front steering angle: " << chassis_report_.VI_FrontSteeringAngle << " deg " << endl;
-	// remaining times
-	cout << "Remaining times: " << chassis_report_.VI_RemainingTimes << " s" << endl;
-	// vehicle speed
-	cout << "Vehicle speed: " << chassis_report_.VI_VehicleSpeed << " km/h" << endl;
-}
-
-void CanBusReader::PrintSInfo2() {
-	std::cout << "Longitudinal accel: " << chassis_report_.SI2_LongitudinalAccel << " m/s2 " << std::endl;
-	std::cout << "Lateral accel: " << chassis_report_.SI2_LateralAccel << " m/s2 " << std::endl;
-	std::cout << "Yawrate is " << chassis_report_.SI2_YawRate << " deg/s " << std::endl;
-}
 
 
-
-
-bool CanBusReader::DataCheck(const can_frame& frame){
+bool CanBusReader::DataCheck(const can_frame& frame) {
 	uint8_t CheckSum = frame.data[0];
 	for(int i = 1; i < frame.can_dlc; ++i) {
 		CheckSum ^= frame.data[i];
@@ -412,12 +234,12 @@ bool CanBusReader::DataCheck(const can_frame& frame){
 	return CheckSum == 0;
 }
 
-void CanBusReader::PublishToRos(){
-	ros::Rate loop_rate_ (SEND_HZ);
+void CanBusReader::PublishToRos() {
+	ros::Rate loop_rate_(SEND_HZ);
 	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
-	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",1000);
+	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",10);
 	canbus::frame msg;
-	while(ros::ok()){
+	while(ros::ok()) {
 		// make sure the messages have been read from canbus before being sent out
 		if (!(HSEVHU_SR_read_ && HSEVCO_VI_read_ && HSEVCO_SI2_read_)) {
 			std::cout << "Messages haven't been read, skip sending " << std::endl;
@@ -471,12 +293,11 @@ void CanBusReader::PublishToRos(){
 		rw_mutex_.unlock();
 		loop_rate_.sleep();
 	}
-
 }
 
-void CanBusReader::StartRead(){
+void CanBusReader::StartRead() {
 	using namespace std;
-	std::cout << "start receive thread id is" << std::this_thread::get_id() << endl;
+	std::cout << "start receive thread id is" << std::this_thread::get_id() << std::endl;
 	ros::Rate loop_rate(READ_HZ);
 	if (!InitSocket()) {
         cout << "Init socket failed" << endl;
@@ -490,11 +311,187 @@ void CanBusReader::StartRead(){
 		}
      		loop_rate.sleep();
     }
-    
-
     if (!CloseSocket()) {
         cout << "Close socket failed" << endl;
     } else {
         cout << "Close socket succuss" << endl;
     }
+}
+
+
+
+void CanBusReader::PrintCanFrameDLC(const can_frame& frame) {
+	for(int i = 0; i < frame.can_dlc; ++i) {
+		std::cout << std::hex << (int)frame.data[i] << " ";
+	}
+	std::cout << std::endl;
+}
+
+void CanBusReader::PrintSteeringReport() {
+	using namespace std;
+
+	// steering wheel angle
+	cout << "Steering wheel angle: " << steering_report_.SR_CurrentSteeringAngle << " deg" << endl;
+	// steering wheel angle speed
+	cout << "Steering wheel angle speed: " << steering_report_.SR_CurrentSteeringSpeed << " deg/s" << endl;
+	// hand torque
+	cout << "Hand torque: " << steering_report_.SR_HandTorque << " Nm" << endl;
+    // hand torque sign
+	const string hand_torque_sign = steering_report_.SR_HandTorqueSign == 0 ? "left" : "right";
+	cout << "Hand torque sign: " << hand_torque_sign << endl;
+	// hand torque limit
+	cout << "Hand torque limit " << steering_report_.SR_HandTorqueLimit << " Nm" << endl;
+    // work mode
+	string work_mode;
+	switch (steering_report_.SR_WorkMode) {
+		case 0:
+			work_mode = "Manual";
+			break;
+		case 1:
+			work_mode = "Angle";
+			break;
+		case 2:
+			work_mode = "Torque";
+			break;
+		case 7:
+			work_mode = "Error";
+			break;
+		default:
+			work_mode = "Unknown";
+			break;
+	}
+	cout << "Workmode: " << work_mode << endl;
+    // error
+	string error;
+	switch (steering_report_.SR_Error) {
+		case 0:
+			error = "NoError";
+			break;
+		case 1:
+			error = "OverCurrent";
+			break;
+		case 2:
+			error = "LoseSAS";
+			break;
+		default:
+			error = "Unknown";
+			break;
+	}
+	cout << "Error: " << error << endl;
+	// warning
+	string warning;
+	switch (steering_report_.SR_Warning) {
+		case 0:
+			warning = "None";
+			break;
+		case 1:
+			warning = "Left Limit";
+			break;
+		case 2:
+			warning = "Right Limit";
+			break;
+		default:
+			warning = "Unknown";
+			break;
+	}
+	cout << "Warning: " << warning << endl;
+	// live counter
+	cout << "LiveCounter: " << steering_report_.SR_LiveCounter << endl;
+}
+
+void CanBusReader::PrintVehicleInfo() {
+	using namespace std;
+
+	// gear info
+	switch (chassis_report_.VI_GearInfo) {
+		case 0:
+			cout << "Gear: P" << endl;
+			break;
+		case 1:
+			cout << "Gear: R" << endl;
+			break;
+		case 2:
+			cout << "Gear: N" << endl;
+			break;
+		case 3:
+			cout << "Gear: D" << endl;
+			break;
+		default:
+			cout << "Gear: Unknown" << endl;
+			break;
+	}
+	// brake info
+	switch (chassis_report_.VI_BrakeInfo) {
+		case 0:
+			cout << "Brake: No Brake" << endl;
+			break;
+		case 1:
+			cout << "Brake: Brake" << endl;
+			break;
+		default:
+			cout << "Brake: Unknown" << endl;
+			break;
+	}
+	// button 1
+	switch (chassis_report_.VI_Button1) {
+		case 0:
+			cout << "Button 1: No Press" << endl;
+			break;
+		case 1:
+			cout << "Button 1: Pressed" << endl;
+			break;
+		default:
+			cout << "Button 1: Unknown" << endl;
+			break;
+	}
+	// button 2
+	switch (chassis_report_.VI_Button2) {
+		case 0:
+			cout << "Button 2: No Press" << endl;
+			break;
+		case 1:
+			cout << "Button 2: Pressed" << endl;
+			break;
+		default:
+			cout << "Button 2: Unknown" << endl;
+			break;
+	}
+    // handbrake
+	switch (chassis_report_.VI_HandBrakeSt) {
+		case 0:
+			cout << "Hand Brake: No Brake" << endl;
+			break;
+		case 1:
+			cout << "Hand Brake: Brake" << endl;
+			break;
+		default:
+			cout << "Hand Brake: Unknown" << endl;
+			break;
+	}
+    // jerk st
+	switch (chassis_report_.VI_JerkSt) {
+		case 0:
+			cout << "JerkSt: No Press" << endl;
+			break;
+		case 1:
+			cout << "JerkSt: Pressed" << endl;
+			break;
+		default:
+			cout << "JerkSt: Unknown" << endl;
+			break;
+	}
+	// accel pedal position
+	cout << "Accel pedal position: " << chassis_report_.VI_AccelPedalPosition << " % " << endl;
+    // front steering angle
+	cout << "Front steering angle: " << chassis_report_.VI_FrontSteeringAngle << " deg " << endl;
+	// remaining times
+	cout << "Remaining times: " << chassis_report_.VI_RemainingTimes << " s" << endl;
+	// vehicle speed
+	cout << "Vehicle speed: " << chassis_report_.VI_VehicleSpeed << " km/h" << endl;
+}
+
+void CanBusReader::PrintSInfo2() {
+	std::cout << "Longitudinal accel: " << chassis_report_.SI2_LongitudinalAccel << " m/s2 " << std::endl;
+	std::cout << "Lateral accel: " << chassis_report_.SI2_LateralAccel << " m/s2 " << std::endl;
+	std::cout << "Yawrate is " << chassis_report_.SI2_YawRate << " deg/s " << std::endl;
 }

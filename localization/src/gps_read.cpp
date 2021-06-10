@@ -23,7 +23,7 @@ GpsReader::GpsReader() {
     node_.param("serial_port_name", gps_port_,
                 std::string("/dev/ttyACM0"));   
     node_.param("enable_log", enable_log_,
-                std::string("1")); 
+                std::string("0")); 
     node_.param("track_trajectory_file", trajectory_file_,
                 std::string("/home/nvidia/tmp/buffoutput.csv")); 
     node_.param("receive_hz", hz_,

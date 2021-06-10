@@ -28,12 +28,13 @@
 #define HSEVCO_SI1_ID 0x68B // 100Hz
 #define HSEVCO_VI_ID 0x68F // 100Hz
 #define HSEVCO_WSI_ID 0x68D // 100Hz
-#define ENABLE_CANBUS_LOG 1
+#define ENABLE_CANBUS_LOG 0
 
 CanBusReader::CanBusReader() {
 	n_.param("can_port_num",can_port_,std::string("can0"));
-	n_.param("enable_log",can_port_,std::string("can0"));
-	n_.param("can_port_num",can_port_,std::string("can0"));
+	//n_.param("enable_log",can_port_,std::string("can0"));
+	//n_.param("can_port_num",can_port_,std::string("can0"));
+	
 	if (ENABLE_CANBUS_LOG) {
 		time_t rawtime;
 		char name_buffer[80];
@@ -120,12 +121,12 @@ bool CanBusReader::ReadCanBus() {
 		perror("Read error");
 		return false;
 	}
-/*
+
 	if(!DataCheck(frame)) {
 		cout << "This is an error frame" << endl;
 		return false;
 	}
-*/	
+
     //cout <<hex<< frame.can_id << endl;
 	rw_mutex_.lock();
 	switch(frame.can_id) {
@@ -222,6 +223,102 @@ bool CanBusReader::CloseSocket() {
 	}
 	return true;
 }
+
+
+
+bool CanBusReader::DataCheck(const can_frame& frame) {
+	uint8_t CheckSum = frame.data[0];
+	for(int i = 1; i < frame.can_dlc; ++i) {
+		CheckSum ^= frame.data[i];
+	}
+	return CheckSum == 0;
+}
+
+void CanBusReader::PublishToRos() {
+	ros::Rate loop_rate_(SEND_HZ);
+	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
+	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",10);
+	canbus::frame msg;
+	while(ros::ok()) {
+		// make sure the messages have been read from canbus before being sent out
+		if (!(HSEVHU_SR_read_ && HSEVCO_VI_read_ && HSEVCO_SI2_read_)) {
+			std::cout << "Messages haven't been read, skip sending " << std::endl;
+			usleep(20000);
+			continue;
+		}
+		rw_mutex_.lock();
+		//chassis_report_
+		msg.VI_GearInfo = chassis_report_.VI_GearInfo;
+		msg.VI_BrakeInfo = chassis_report_.VI_BrakeInfo;
+		msg.VI_Button1 = chassis_report_.VI_Button1;
+		msg.VI_Button2 = chassis_report_.VI_Button2;
+		msg.VI_HandBrakeSt = chassis_report_.VI_HandBrakeSt;
+		msg.VI_JerkSt = chassis_report_.VI_JerkSt;
+		msg.VI_AccelPedalPosition = chassis_report_.VI_AccelPedalPosition;
+		msg.VI_FrontSteeringAngle = chassis_report_.VI_FrontSteeringAngle;
+		msg.VI_RemainingTimes = chassis_report_.VI_RemainingTimes;
+		msg.VI_VehicleSpeed = chassis_report_.VI_VehicleSpeed;
+		msg.SI2_LongitudinalAccel = chassis_report_.SI2_LongitudinalAccel;
+		msg.SI2_LateralAccel = chassis_report_.SI2_LateralAccel;
+		msg.SI2_YawRate = chassis_report_.SI2_YawRate;
+
+		//steering_report_
+		msg.SR_CurrentSteeringAngle = steering_report_.SR_CurrentSteeringAngle;
+		msg.SR_CurrentSteeringSpeed = steering_report_.SR_CurrentSteeringSpeed;
+		double hand_torque = 0.0;
+		if (steering_report_.SR_HandTorqueSign == 0) { // left
+			hand_torque = steering_report_.SR_HandTorque;
+		} else {
+			hand_torque = -1.0 * steering_report_.SR_HandTorque;
+		}
+		msg.SR_HandTorqueSign = steering_report_.SR_HandTorqueSign;
+		msg.SR_HandTorque = hand_torque;
+		msg.SR_WorkMode = steering_report_.SR_WorkMode;
+		msg.SR_HandTorqueLimit = steering_report_.SR_HandTorqueLimit;
+		msg.SR_Error = steering_report_.SR_Error;
+		msg.SR_Warning = steering_report_.SR_Warning;
+		msg.SR_LiveCounter = steering_report_.SR_LiveCounter;
+		pub_to_CANINFO.publish(msg);
+		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
+		if (ENABLE_CANBUS_LOG && log_file_ != nullptr) {
+			fprintf(log_file_,
+			        "%.6f %.6f %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f \r\n",
+					now_in_seconds, steering_report_.SR_CurrentSteeringAngle, steering_report_.SR_CurrentSteeringSpeed,
+					hand_torque, steering_report_.SR_WorkMode, steering_report_.SR_HandTorqueLimit,
+					chassis_report_.VI_AccelPedalPosition, chassis_report_.VI_FrontSteeringAngle,
+					chassis_report_.VI_VehicleSpeed, chassis_report_.SI2_LongitudinalAccel,
+					chassis_report_.SI2_LateralAccel, chassis_report_.SI2_YawRate);
+		}
+		rw_mutex_.unlock();
+		loop_rate_.sleep();
+	}
+}
+
+void CanBusReader::StartRead() {
+	using namespace std;
+	std::cout << "start receive thread id is" << std::this_thread::get_id() << std::endl;
+	ros::Rate loop_rate(READ_HZ);
+	if (!InitSocket()) {
+        cout << "Init socket failed" << endl;
+        return ;
+    } else {
+        cout << "Init socket success" << endl;
+    }
+	while (ros::ok()) {
+		if (!ReadCanBus()) {
+			cout << "Read canbus failed!" << endl;
+		}
+     		loop_rate.sleep();
+    }
+    if (!CloseSocket()) {
+        cout << "Close socket failed" << endl;
+    } else {
+        cout << "Close socket succuss" << endl;
+    }
+}
+
+
 
 void CanBusReader::PrintCanFrameDLC(const can_frame& frame) {
 	for(int i = 0; i < frame.can_dlc; ++i) {
@@ -397,96 +494,4 @@ void CanBusReader::PrintSInfo2() {
 	std::cout << "Longitudinal accel: " << chassis_report_.SI2_LongitudinalAccel << " m/s2 " << std::endl;
 	std::cout << "Lateral accel: " << chassis_report_.SI2_LateralAccel << " m/s2 " << std::endl;
 	std::cout << "Yawrate is " << chassis_report_.SI2_YawRate << " deg/s " << std::endl;
-}
-
-bool CanBusReader::DataCheck(const can_frame& frame) {
-	uint8_t CheckSum = frame.data[0];
-	for(int i = 1; i < frame.can_dlc; ++i) {
-		CheckSum ^= frame.data[i];
-	}
-	return CheckSum == 0;
-}
-
-void CanBusReader::PublishToRos() {
-	ros::Rate loop_rate_ (SEND_HZ);
-	std::cout << "start publish thread id is" << std::this_thread::get_id() <<std::endl;
-	ros::Publisher pub_to_CANINFO = this->n_.advertise<canbus::frame>("CAN_INFO",1000);
-	canbus::frame msg;
-	while(ros::ok()) {
-		// make sure the messages have been read from canbus before being sent out
-		if (!(HSEVHU_SR_read_ && HSEVCO_VI_read_ && HSEVCO_SI2_read_)) {
-			std::cout << "Messages haven't been read, skip sending " << std::endl;
-			usleep(20000);
-			continue;
-		}
-		rw_mutex_.lock();
-		//chassis_report_
-		msg.VI_GearInfo = chassis_report_.VI_GearInfo;
-		msg.VI_BrakeInfo = chassis_report_.VI_BrakeInfo;
-		msg.VI_Button1 = chassis_report_.VI_Button1;
-		msg.VI_Button2 = chassis_report_.VI_Button2;
-		msg.VI_HandBrakeSt = chassis_report_.VI_HandBrakeSt;
-		msg.VI_JerkSt = chassis_report_.VI_JerkSt;
-		msg.VI_AccelPedalPosition = chassis_report_.VI_AccelPedalPosition;
-		msg.VI_FrontSteeringAngle = chassis_report_.VI_FrontSteeringAngle;
-		msg.VI_RemainingTimes = chassis_report_.VI_RemainingTimes;
-		msg.VI_VehicleSpeed = chassis_report_.VI_VehicleSpeed;
-		msg.SI2_LongitudinalAccel = chassis_report_.SI2_LongitudinalAccel;
-		msg.SI2_LateralAccel = chassis_report_.SI2_LateralAccel;
-		msg.SI2_YawRate = chassis_report_.SI2_YawRate;
-
-		//steering_report_
-		msg.SR_CurrentSteeringAngle = steering_report_.SR_CurrentSteeringAngle;
-		msg.SR_CurrentSteeringSpeed = steering_report_.SR_CurrentSteeringSpeed;
-		double hand_torque = 0.0;
-		if (steering_report_.SR_HandTorqueSign == 0) { // left
-			hand_torque = steering_report_.SR_HandTorque;
-		} else {
-			hand_torque = -1.0 * steering_report_.SR_HandTorque;
-		}
-		msg.SR_HandTorqueSign = steering_report_.SR_HandTorqueSign;
-		msg.SR_HandTorque = hand_torque;
-		msg.SR_WorkMode = steering_report_.SR_WorkMode;
-		msg.SR_HandTorqueLimit = steering_report_.SR_HandTorqueLimit;
-		msg.SR_Error = steering_report_.SR_Error;
-		msg.SR_Warning = steering_report_.SR_Warning;
-		msg.SR_LiveCounter = steering_report_.SR_LiveCounter;
-		pub_to_CANINFO.publish(msg);
-		long now_in_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		double now_in_seconds = static_cast<double> (now_in_nanoseconds * 1e-9);
-		if (ENABLE_CANBUS_LOG && log_file_ != nullptr) {
-			fprintf(log_file_,
-			        "%.6f %.6f %.6f %.6f %d %.6f %.6f %.6f %.6f %.6f %.6f %.6f \r\n",
-					now_in_seconds, steering_report_.SR_CurrentSteeringAngle, steering_report_.SR_CurrentSteeringSpeed,
-					hand_torque, steering_report_.SR_WorkMode, steering_report_.SR_HandTorqueLimit,
-					chassis_report_.VI_AccelPedalPosition, chassis_report_.VI_FrontSteeringAngle,
-					chassis_report_.VI_VehicleSpeed, chassis_report_.SI2_LongitudinalAccel,
-					chassis_report_.SI2_LateralAccel, chassis_report_.SI2_YawRate);
-		}
-		rw_mutex_.unlock();
-		loop_rate_.sleep();
-	}
-}
-
-void CanBusReader::StartRead() {
-	using namespace std;
-	std::cout << "start receive thread id is" << std::this_thread::get_id() << std::endl;
-	ros::Rate loop_rate(READ_HZ);
-	if (!InitSocket()) {
-        cout << "Init socket failed" << endl;
-        return ;
-    } else {
-        cout << "Init socket success" << endl;
-    }
-	while (ros::ok()) {
-		if (!ReadCanBus()) {
-			cout << "Read canbus failed!" << endl;
-		}
-     		loop_rate.sleep();
-    }
-    if (!CloseSocket()) {
-        cout << "Close socket failed" << endl;
-    } else {
-        cout << "Close socket succuss" << endl;
-    }
 }

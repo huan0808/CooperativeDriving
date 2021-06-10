@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/logo"/>
+    <qresource prefix="/">
+        <file>JLUlogo.jpeg</file>
+        <file>CTIS.ico</file>
+    </qresource>
+</RCC>

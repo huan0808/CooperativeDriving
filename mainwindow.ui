@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>899</width>
+    <height>865</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>JiLin University   CTIS   Tian's Group</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <widget class="QGroupBox" name="groupBox">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>871</width>
+      <height>151</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-color: rgb(156, 156, 156);
+border-width:1px;
+border-style: solid;
+margin-top: 0.5ex;</string>
+    </property>
+    <property name="title">
+     <string>画图</string>
+    </property>
+    <widget class="QPushButton" name="PythonFilePathBtn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择python脚本</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="PythonFilePathLine">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>30</y>
+       <width>541</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ReferencePathBtn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择参考轨迹文件</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="ReferencePathLine">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>60</y>
+       <width>541</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="CurrentPahtDicBtn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>90</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择当前轨迹文件夹</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="CurrentPathDicLine">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>90</y>
+       <width>541</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="SelectButton_4">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>120</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>倒数第n个数据文件</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="PlotPathBtn">
+     <property name="geometry">
+      <rect>
+       <x>600</x>
+       <y>120</y>
+       <width>261</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>绘制轨迹</string>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="PathCountBox">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>120</y>
+       <width>271</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+     <property name="value">
+      <number>1</number>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>160</y>
+      <width>871</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-color: rgb(156, 156, 156);
+border-width:1px;
+border-style: solid;
+margin-top: 0.5ex;</string>
+    </property>
+    <property name="title">
+     <string>运行</string>
+    </property>
+    <widget class="QPushButton" name="LaunchSelectButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择目标launch文件</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="LaunchPathLine">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>30</y>
+       <width>541</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="SaveChangeBtn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>90</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>确认修改launch文件</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="RoslaunchFileBtn">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>90</y>
+       <width>271</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>roslaunch 当前文件</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="RoslaunchStopBtn">
+     <property name="geometry">
+      <rect>
+       <x>610</x>
+       <y>90</y>
+       <width>251</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>停止当前launch文件</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="ShellPathLine">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>60</y>
+       <width>541</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ShellSelectButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>291</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择shell文件</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>290</y>
+      <width>311</width>
+      <height>531</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>可修改变量</string>
+    </property>
+    <widget class="QListWidget" name="paramList">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>291</width>
+       <height>491</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_4">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>289</y>
+      <width>551</width>
+      <height>531</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>打印输出</string>
+    </property>
+    <widget class="QTextEdit" name="LogOutputText">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>531</width>
+       <height>461</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="ClearButton">
+     <property name="geometry">
+      <rect>
+       <x>360</x>
+       <y>500</y>
+       <width>181</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>清空显示区</string>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>899</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

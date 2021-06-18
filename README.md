@@ -34,4 +34,6 @@ canbus: 负责与CAN总线通信，采用两个线程，一个线程通过socket
 control: 负责车辆的控制，采用两个线程，一个线程订阅GPS_INFO和CAN_INFO，一个线程实时计算方向盘力矩命令并将其编码成CAN报文，通过CAN总线发送至改装线控，实现基于力反馈的人机共驾
 
 ## 3. 算法说明
+### PDPID
 ![Alt text](https://raw.githubusercontent.com/huan0808/CooperativeDriving/main/backup/algorithm.png)
+### AdrcPid

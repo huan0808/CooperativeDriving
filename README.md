@@ -1,15 +1,25 @@
 # CooperativeDriving
 **本项目为人机共驾项目相关代码**
 
-## 1.  编译方式：
-将本项目的三个模块 canbus，localization,control 复制到 ros的catkin_ws/src目录下，在ros的catkin_ws目录下进行编译
+
+## 1.  运行方式：
+
+### 宿主机环境编译
 ```
-catkin_make
+mkdir -p catkin_ws/src && cd src && git clone git@github.com:huan0808/CooperativeDriving.git
+cd .. &&  catkin_make
 ```
-运行：
-打开新的终端运行启动命令
+### docker环境编译
 ```
-roslaunch canbus main.launch
+./make_container.sh cooperative
+./start_container.sh cooperative  cooperative_container
+mkdir -p catkin_ws/src && cd src && git clone git@github.com:huan0808/CooperativeDriving.git
+cd .. &&  catkin_make
+```
+
+### 运行：
+```
+roslaunch launcher start_drive.launch
 ```
 
 

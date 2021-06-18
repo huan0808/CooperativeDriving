@@ -24,7 +24,7 @@ roslaunch launcher start_drive.launch
 
 
 ## 2. 模块说明
-![Alt text](https://github.com/huan0808/CooperativeDriving/blob/main/backup/%E9%A1%B9%E7%9B%AE%E7%9B%B8%E5%85%B3%20(2).jpg)
+![Alt text](https://raw.githubusercontent.com/huan0808/CooperativeDriving/main/backup/%E9%A1%B9%E7%9B%AE%E7%9B%B8%E5%85%B3%20(2).jpg)
 
 localization: 负责与gps/imu通信，采用两个线程，一个线程读取usb字符设备ttyACM0并对字符串进行解析，一个线程发布定位信息（x、y、heading等）到topic GPS_INFO
 

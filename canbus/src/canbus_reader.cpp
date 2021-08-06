@@ -210,6 +210,7 @@ bool CanBusReader::ReadCanBus() {
 			break;
 		}
 	}
+
 	rw_mutex_.unlock();//lock pass
 
 	
@@ -248,6 +249,7 @@ void CanBusReader::PublishToRos() {
 		}
 		rw_mutex_.lock();
 		//chassis_report_
+		WriteCANSignal(chassis_report_.SI2_YawRate,chassis_report_.VI_VehicleSpeed);
 		msg.VI_GearInfo = chassis_report_.VI_GearInfo;
 		msg.VI_BrakeInfo = chassis_report_.VI_BrakeInfo;
 		msg.VI_Button1 = chassis_report_.VI_Button1;
@@ -494,4 +496,25 @@ void CanBusReader::PrintSInfo2() {
 	std::cout << "Longitudinal accel: " << chassis_report_.SI2_LongitudinalAccel << " m/s2 " << std::endl;
 	std::cout << "Lateral accel: " << chassis_report_.SI2_LateralAccel << " m/s2 " << std::endl;
 	std::cout << "Yawrate is " << chassis_report_.SI2_YawRate << " deg/s " << std::endl;
+}
+
+void CanBusReader::WriteCANSignal(double raw,double velocity) {
+	//write raw & velocity in 50 HZ 
+	//what is difference of Vehicle speed average and Vehicle speed no average 
+	can_frame frame_velocity;
+	can_frame frame_raw;
+	memset(frame_velocity.data, 0, sizeof(frame_velocity.data));
+	memset(frame_raw.data, 0, sizeof(frame_raw.data));
+	frame_velocity.can_id = 0x3E9;
+	frame_velocity.can_dlc = 8;
+	int raw_data = raw / 0.024;
+	int velocity_data = velocity;
+	frame_raw.can_id = 0x130;
+	frame_raw.can_dlc = 8;
+	frame_raw.data[0] = raw_data >> 8;
+	frame_raw.data[1] = raw_data & 0xFF;
+	frame_velocity.data[0] = velocity_data >> 8;
+	frame_velocity.data[1] = velocity_data & 0xFF;
+	write(s_, &frame_velocity, sizeof(can_frame)); 
+	write(s_, &frame_raw, sizeof(can_frame)); 
 }

@@ -7,13 +7,14 @@
 #include "steering_report.hpp"
 #include "ros/ros.h"
 #include <mutex>
+#include <bitset>
 
 #define SEND_HZ 50   
 #define READ_HZ 400
-class CanBusReader {
+class Perception {
 public:
-    CanBusReader();
-    ~CanBusReader();
+    Perception();
+    ~Perception();
     bool InitSocket();
     //int ReadCanBus(SteeringReport* steering_report, ChassisReport* const chassis_report);
     bool CloseSocket();
@@ -32,11 +33,11 @@ private:
     //void PrintSInfo2(const ChassisReport& chassis_report);
     void PrintSInfo2();
     bool ReadCanBus();
-    void WriteCANSignal(double raw,double velocity);
     bool DataCheck(const can_frame& frame);
+    //void ConvertData2BitSet(const can_frame& frame,bitset<64> &bit_array);
     ros::NodeHandle n_;
-    SteeringReport steering_report_;
-    ChassisReport chassis_report_;
+    MoveableTarget move_target_;
+    StationTarget station_target_;
     std::mutex rw_mutex_;
  
     FILE* log_file_ = nullptr;

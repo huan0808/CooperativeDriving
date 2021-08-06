@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="perception" type="_perception" name = "perception" output = "screen"/>
+
+</launch>
+

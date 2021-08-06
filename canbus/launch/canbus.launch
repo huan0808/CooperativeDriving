@@ -1,9 +1,9 @@
 <launch>
-    <node pkg="localization" type="_localization" name = "Gps" output = "screen"/>
+    <node pkg="canbus" type="_canbus" name = "CAN" output = "screen"/>
         <param name="can_port_num" value="can0" />
         <param name="enable_log" value="0" />
         <param name="print_log_std" value="0" />
         <param name="logfile dir" value="/home/nvidia/" />
-        <param name="receive_hz" value="50" />
+        <param name="receive_hz" value="60" />
 </launch>
 

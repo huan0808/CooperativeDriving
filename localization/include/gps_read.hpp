@@ -29,7 +29,7 @@ private:
     std::string GPS_STR_;
     std::mutex rw_mutex_;
     std::string gps_port_;
-    std::string enable_log_;
+    bool enable_log_;
     std::string trajectory_file_;
     ImuReport imu_report_;
     GpsReport gps_report_;
@@ -39,4 +39,6 @@ private:
     double x_ = -99.0;
     double y_ = -99.0;
     int hz_;
+    int serial_port_;
+    bool ENABLE_SERIAL_LOG;
 };

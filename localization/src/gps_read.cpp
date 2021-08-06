@@ -19,15 +19,23 @@
 
 //void signal_callback_handler(int signum);
 
-GpsReader::GpsReader() {
-    node_.param("serial_port_name", gps_port_,
+GpsReader::GpsReader():n_("~") {
+    std::string enable_log;
+    std::string hz;
+    std::string serial_log;
+    n_.param("serial_port_name", gps_port_,
                 std::string("/dev/ttyACM0"));   
-    node_.param("enable_log", enable_log_,
+    n_.param("enable_log", enable_log,
                 std::string("0")); 
-    node_.param("track_trajectory_file", trajectory_file_,
+    n_.param("track_trajectory_file", trajectory_file_,
                 std::string("/home/nvidia/tmp/buffoutput.csv")); 
-    node_.param("receive_hz", hz_,
+    n_.param("receive_hz", hz,
                 std::string("50"));
+    n_.param("ENABLE_SERIAL_LOG", serial_log,
+        std::string("0"));
+    enable_log_ = enable_log.front() - '0';
+    ENABLE_SERIAL_LOG = serial_log.front() - '0';
+    hz_ = stoi(hz);
 	if (enable_log_) {
 		time_t rawtime;
 		char name_buffer[80];
@@ -110,7 +118,7 @@ bool GpsReader::StartReadGps() {
     else {
         cout <<  "serial init success" << endl;
     }
-    FILE * file = fopen(trajectory_file_,"w");
+    FILE * file = fopen(trajectory_file_.c_str(),"w");
     if(file == nullptr) {
         cout << "open file failure" << endl;
     }
@@ -151,7 +159,7 @@ void GpsReader::StartReadGps_fake() {
     if(InitSerial() == 0 ) {
         return ;
     }
-    FILE * file = fopen(trajectory_file_,"w");
+    FILE * file = fopen(trajectory_file_.c_str(),"w");
     if(file == nullptr) {
         cout << "open file failure" << endl;
     }
